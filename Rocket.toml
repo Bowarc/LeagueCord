@@ -1,0 +1,26 @@
+# https://rocket.rs/v0.5-rc/guide/configuration/
+
+## defaults for ALL profiles
+[default]
+# IP address to serve on.
+address = "192.168.1.39" # Local addr
+# Port to serve on.
+port = 0xa455
+# Number of threads to use for executing futures.
+workers = 8
+# Keep-alive timeout seconds; disabled when 0.
+keep_alive = 0 # This could become a problem if we have to read/write large files
+# Max level to log. (off/normal/debug/critical)
+log_level = "normal" # Isn't it the 'minimal' level instead ? like log everything above that threshold ?
+# Doesn't work well with my file logger system
+cli_colors = false
+
+# Streaming read size limits.
+[default.limits]
+bytes = "0 B"
+data-form = "0 B"
+file = "0 B"
+form = "0 B"
+msgpack = "0 B"
+string = "0 B"
+json = "0 B"
