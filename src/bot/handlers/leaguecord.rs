@@ -1,33 +1,43 @@
+use std::{collections::HashMap, sync::Arc};
+
 use serenity::{
     all::{Context, EditMember, EditRole, EventHandler, GuildId, Message},
     prelude::TypeMapKey,
 };
+use tokio::sync::RwLock;
+
+mod data;
 
 pub struct LeagueCord;
 
-pub struct IdCache {
-    guild: GuildId,
+#[derive(Debug, Clone)]
+pub struct LeagueCordData {
+    ids: Arc<data::IdCache>,
+    invites: Arc<RwLock<HashMap<data::InviteCode, data::InviteUseCount>>>,
+    groups: Arc<RwLock<Vec<data::Group>>>
 }
 
-#[derive(Debug)]
-pub struct TrackedInvites{
-    inner: std::collections::HashMap<String, u64> 
-}
-
-impl TypeMapKey for IdCache {
+impl TypeMapKey for LeagueCordData {
     type Value = Self;
 }
 
-impl TypeMapKey for TrackedInvites {
-    type Value = Self;
-}
+async fn build_invite_list(
+    ctx: Context,
+    ids: &data::IdCache,
+) -> Result<HashMap<data::InviteCode, data::InviteUseCount>, String> {
+    let Ok(invite_list) = ctx.http.get_guild_invites(ids.guild).await else {
+        return Err(format!(
+            "Could not get the invite list for guild: {:?}",
+            ids.guild
+        ));
+    };
 
-impl std::ops::Deref for TrackedInvites{
-    type Target = std::collections::HashMap<String, u64>;
+    let out = invite_list
+        .into_iter()
+        .map(|invite| (invite.code, invite.uses))
+        .collect();
 
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
+    Ok(out)
 }
 
 #[serenity::async_trait]
@@ -38,11 +48,19 @@ impl EventHandler for LeagueCord {
             std::process::exit(1);
         }
 
-        let id_cache = IdCache {
+        let id_cache = data::IdCache {
             guild: data_about_bot.guilds.first().unwrap().id,
         };
 
-        ctx.data.write().await.insert::<IdCache>(id_cache);
+        let invites = build_invite_list(ctx.clone(), &id_cache).await.unwrap();
+
+        let data = LeagueCordData {
+            ids: Arc::new(id_cache),
+            invites: Arc::new(RwLock::new(invites)),
+            groups: Arc::new(RwLock::new(Vec::new()))
+        };
+
+        ctx.data.write().await.insert::<LeagueCordData>(data);
 
         debug!("Bot is loaded")
     }
@@ -52,11 +70,14 @@ impl EventHandler for LeagueCord {
         ctx: Context,
         mut new_member: serenity::model::prelude::Member,
     ) {
-        let data_read  = ctx.data.read().await;
-        let Some(saved_invites) = data_read.get::<TrackedInvites>() else{
+        let ctx_data_storage = ctx.data.clone();
+        let ctx_data_storage_read = ctx_data_storage.read().await;
+        let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
             error!("Could not get tracked invites from data");
             return;
         };
+
+        let mut saved_invites_lock = data.invites.write().await;
         // get saved invites from saved data
 
         let invites = ctx
@@ -65,24 +86,28 @@ impl EventHandler for LeagueCord {
             .await
             .unwrap();
 
-        for invite in invites.iter() {
-            let Some(saved_invite_use_count) = saved_invites.get(&invite.code) else {
-                println!("New invite: {invite:?}");
-                continue;
-            };
+        // Can we find in the guild invite list, an invite where the use count is different that what we saved ?
+        // If there is a lot of pple that join at the same time, this might return multiple results.
+        // For that we can send the user to a special channel where we can ask for the invite code directly
 
-            if invite.uses == *saved_invite_use_count {
-                continue;
-            }
-            debug!("{saved_invites:?}");
+        let used_invites = invites
+            .iter()
+            .filter(|invite| {
+                let Some(saved_invite_use_count) = saved_invites_lock.get(&invite.code) else {
+                    println!("New invite: {invite:?}");
+                    return false;
+                };
 
-            info!("Found invite: {invite:?}");
-            let guild = ctx
-                .clone()
-                .http
-                .get_guild(new_member.guild_id)
-                .await
-                .unwrap();
+                invite.uses != *saved_invite_use_count
+            })
+            .collect::<Vec<_>>();
+
+        if used_invites.len() == 1 {
+            let _invite = used_invites.first().unwrap();
+
+            // TODO:  Query the group based on the invite code, get the role id, assign the role to the user
+
+            /*
 
             let role = if let Some(role) = guild
                 .roles
@@ -104,7 +129,19 @@ impl EventHandler for LeagueCord {
                 .edit(ctx.clone(), EditMember::new().roles(vec![role.id]))
                 .await
                 .unwrap();
+
+            */
+        } else if used_invites.is_empty() {
+            // ?? The used invite was not registered, this must be an old one
+            // Probably kick the user or send them to a specific channel
+        } else {
+            // multiple matches
+            // Send them to a channel that request them to send the invite link or the group code idfk
         }
+
+        // Force update the invite list
+
+        *saved_invites_lock = build_invite_list(ctx, &data.ids).await.unwrap()
     }
 
     async fn message(&self, ctx: Context, message: Message) {

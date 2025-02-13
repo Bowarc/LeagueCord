@@ -1,3 +1,3 @@
 fn main() {
-    println!("Hello, world!");
+    yew::Renderer::<front::App>::new().render();
 }

@@ -12,13 +12,11 @@ path = "src/main.rs"
 name = "leaguecord"
 
 [dependencies]
-# logger = { git = "https://github.com/bowarc/crates", package = "logger", features = [
-#   "panics",
-# ] }
-logger = { path = "/home/bowarc/dev/rust/git/bowarc/crates/logger", package = "logger", features = [
+logger = { git = "https://github.com/bowarc/crates", package = "logger", features = [
   "panics",
 ] }
 log = "0.4.20"
+random = { git = "https://github.com/bowarc/crates", package = "random" }
 tokio = { version = "1.43.0", features = ["rt-multi-thread"] }
 serenity = "0.12.4"
 rocket = "0.5.1"
