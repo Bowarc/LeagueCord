@@ -21,9 +21,10 @@ pub async fn run_threaded(
     // Create a new instance of the Client, logging in as a bot.
     let cb = Client::builder(&token, intents)
         // .event_handler(handlers::Basic)
-        // .event_handler(handlers::Purge)
         // .event_handler(handlers::Logger)
         .event_handler(handlers::LeagueCord)
+        .event_handler(handlers::Debug)
+        .event_handler(handlers::Purge)
         .status(serenity::all::OnlineStatus::DoNotDisturb)
         .activity(ActivityData::listening(format!(
             "{}help",
