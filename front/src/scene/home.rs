@@ -2,7 +2,6 @@ use yew::html;
 
 pub struct Home;
 
-
 impl yew::Component for Home {
     type Message = ();
 
@@ -13,7 +12,6 @@ impl yew::Component for Home {
     }
 
     fn view(&self, _ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
-
         html! {<>
             <div class="home">
                 <p class="home_main_title">{

@@ -1,17 +1,14 @@
 // use futures::FutureExt;
 use serenity::{
-    all::{ActivityData, Context, FullEvent, GatewayIntents},
+    all::{ActivityData, ApplicationId, GatewayIntents},
     Client,
 };
 
 mod command;
-mod frameworks;
 mod handlers;
 
-pub async fn run_threaded(
-    // dispatcher_sender: Option<std::sync::mpsc::Sender<(Context, FullEvent)>>,
+pub async fn run_threaded(// dispatcher_sender: Option<std::sync::mpsc::Sender<(Context, FullEvent)>>,
 ) -> tokio::task::JoinHandle<()> {
-
     // Login with a bot token from the environment
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     // Set gateway intents, which decides what events the bot will be notified about
@@ -24,6 +21,7 @@ pub async fn run_threaded(
         // .event_handler(handlers::Logger)
         .event_handler(handlers::LeagueCord)
         .event_handler(handlers::Debug)
+        .application_id(ApplicationId::new(1338410037953040466))
         .event_handler(handlers::Purge)
         .status(serenity::all::OnlineStatus::DoNotDisturb)
         .activity(ActivityData::listening(format!(
@@ -31,19 +29,7 @@ pub async fn run_threaded(
             command::DEFAULT_PREFIX
         )));
 
-    // if dispatcher_sender.is_some() {
-    //     cb = cb.framework(frameworks::Dispatcher);
-    // }
-
     let mut client = cb.await.unwrap();
-
-    // if let Some(sender) = dispatcher_sender {
-    //     client
-    //         .data
-    //         .write()
-    //         .await
-    //         .insert::<frameworks::DispatcherData>(frameworks::DispatcherData::new(sender));
-    // }
 
     tokio::task::spawn(async move {
         debug!("Start");

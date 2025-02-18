@@ -1,10 +1,15 @@
 use std::time::Duration;
 
-use serenity::all::{CreateChannel, CreateMessage, Mentionable};
+use serenity::all::{
+    CommandOptionType, CommandType, CreateChannel, CreateCommand, CreateCommandOption, CreateEmbed,
+    CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
+    CreateInteractionResponseMessage, CreateMessage, GuildId, Interaction, Member, Mentionable,
+    User,
+};
 
 use {
     serenity::{
-        all::{Context, EditMember, EditRole, EventHandler, GuildId, Message},
+        all::{Context, EventHandler, Message},
         prelude::TypeMapKey,
     },
     std::{collections::HashMap, sync::Arc},
@@ -48,12 +53,28 @@ pub async fn build_invite_list(
 #[serenity::async_trait]
 impl EventHandler for LeagueCord {
     async fn ready(&self, ctx: Context, data_about_bot: serenity::model::prelude::Ready) {
-        if data_about_bot.guilds.len() != 1 {
-            error!("Expected to live in only one server");
-            std::process::exit(1);
-        }
+        // if data_about_bot.guilds.len() != 1 {
+        //     error!("Expected to live in only one server");
+        //     std::process::exit(1);
+        // }
 
-        let guild = data_about_bot.guilds.first().unwrap();
+        let guild = ctx
+            .http
+            .get_guild(data_about_bot.guilds.first().unwrap().id)
+            .await
+            .unwrap();
+
+        // TESTING COMMANDS
+        // TODO: REMOVE THIS
+        {
+            guild
+                .create_command(
+                    ctx.http.clone(),
+                    CreateCommand::new("test").description("Test command"),
+                )
+                .await
+                .unwrap();
+        }
 
         let graveyard_category = match ctx
             .http
@@ -134,6 +155,7 @@ impl EventHandler for LeagueCord {
         ctx: Context,
         mut new_member: serenity::model::prelude::Member,
     ) {
+        // Get a read ref of the data
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
         let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
@@ -142,9 +164,9 @@ impl EventHandler for LeagueCord {
         };
 
         let mut saved_invites_lock = data.invites.write().await;
-        // get saved invites from saved data
 
-        let invites = ctx
+        // Query server invites
+        let server_invites = ctx
             .http
             .get_guild_invites(new_member.guild_id)
             .await
@@ -154,7 +176,8 @@ impl EventHandler for LeagueCord {
         // If there is a lot of pple that join at the same time, this might return multiple results.
         // For that we can send the user to a special channel where we can ask for the invite code directly
 
-        let used_invites = invites
+        // Get the invites that have a different use count that what was saved
+        let used_invites = server_invites
             .iter()
             .filter(|invite| {
                 let Some(saved_invite_use_count) = saved_invites_lock.get(&invite.code) else {
@@ -166,12 +189,17 @@ impl EventHandler for LeagueCord {
             })
             .collect::<Vec<_>>();
 
+        // Only one invite changed
         if used_invites.len() == 1 {
             let invite = used_invites.first().unwrap();
 
-            let groups = data.groups.write().await;
+            let mut groups = data.groups.write().await;
 
-            let Some(group) = groups.iter().find(|group| group.invite_code == invite.code) else {
+            // Find the group associated to that invite, else kick em
+            let Some(group) = groups
+                .iter_mut()
+                .find(|group| group.invite_code == invite.code)
+            else {
                 if let Err(e) = new_member
                     .kick_with_reason(ctx.http.clone(), "Not appart of a valid group")
                     .await
@@ -216,6 +244,7 @@ impl EventHandler for LeagueCord {
                     )
                     .await;
             }
+            group.users.push(new_member.user.id);
 
             debug!(
                 "Successfully moved new member ({}) to group: {}",
@@ -237,10 +266,98 @@ impl EventHandler for LeagueCord {
                     error!("Failed to send welcome message due to: {e}");
                 }
             });
-        } else if used_invites.is_empty() {
-            // ?? The used invite was not registered, this must be an old one
-            // Probably kick the user or send them to a specific channel
-        } else {
+        }
+        // Could not find what invite was used to join the server
+        else if used_invites.is_empty() {
+            // TODO: better management, maybe a lost users channel / server ?
+            warn!(
+                "Failed to find what invite user {}({}) used to join the server",
+                new_member.user.name, new_member.user.id
+            );
+            println!("e");
+            if let Err(e) = new_member.kick_with_reason(ctx.http.clone(), "Could not find the invite the user joined with").await {
+                error!(
+                    "Failed to kick {}({}) due to {e}",
+                    new_member.user.name, new_member.user.id
+                );
+                let _ignored = data
+                    .ids
+                    .bot_log_channel
+                    .send_message(
+                        ctx.http.clone(),
+                        CreateMessage::new().content(format!(
+                            "Failed to kick new member: '{}'({}) due to {e}",
+                            new_member.display_name(),
+                            new_member.user.id
+                        )),
+                    )
+                    .await;
+            }
+            // TODO: Better user message.
+            if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
+                error!(
+                    "Failed dm {}({}) due to {e}",
+                    new_member.user.name, new_member.user.id
+                );
+                let _ignored = data
+                    .ids
+                    .bot_log_channel
+                    .send_message(
+                        ctx.http.clone(),
+                        CreateMessage::new().content(format!(
+                            "Failed to dm new member: '{}'({}) due to {e}",
+                            new_member.display_name(),
+                            new_member.user.id
+                        )),
+                    )
+                    .await;
+            }
+        }
+        // Found multiple invites that changed since last check
+        else {
+            // TODO: ? lost user channel ?
+            warn!(
+                "Failed to find what invite user {}({}) used to join the server",
+                new_member.user.name, new_member.user.id
+            );
+            println!("e");
+            if let Err(e) = new_member.kick_with_reason(ctx.http.clone(), "Could not find the invite the user joined with").await {
+                error!(
+                    "Failed to kick {}({}) due to {e}",
+                    new_member.user.name, new_member.user.id
+                );
+                let _ignored = data
+                    .ids
+                    .bot_log_channel
+                    .send_message(
+                        ctx.http.clone(),
+                        CreateMessage::new().content(format!(
+                            "Failed to kick new member: '{}'({}) due to {e}",
+                            new_member.display_name(),
+                            new_member.user.id
+                        )),
+                    )
+                    .await;
+            }
+            // TODO: Better user message.
+            if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
+                error!(
+                    "Failed dm {}({}) due to {e}",
+                    new_member.user.name, new_member.user.id
+                );
+                let _ignored = data
+                    .ids
+                    .bot_log_channel
+                    .send_message(
+                        ctx.http.clone(),
+                        CreateMessage::new().content(format!(
+                            "Failed to dm new member: '{}'({}) due to {e}",
+                            new_member.display_name(),
+                            new_member.user.id
+                        )),
+                    )
+                    .await;
+            }
             // multiple matches
             // Send them to a channel that request them to send the invite link or the group code idfk
         }
@@ -250,17 +367,97 @@ impl EventHandler for LeagueCord {
         *saved_invites_lock = build_invite_list(ctx, &data.ids).await.unwrap()
     }
 
+    async fn guild_member_removal(
+        &self,
+        ctx: Context,
+        _guild_id: GuildId,
+        user: User,
+        _member_data_if_available: Option<Member>,
+    ) {
+        // Get a read ref of the data
+        let ctx_data_storage = ctx.data.clone();
+        let ctx_data_storage_read = ctx_data_storage.read().await;
+        let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
+            error!("Could not get tracked invites from data");
+            return;
+        };
+
+        // Lock groups
+        let mut groups = data.groups.write().await;
+
+        if let Some(group) = groups.iter_mut().find(|g| g.users.contains(&user.id)) {
+            group.users.retain(|id| id != &user.id);
+        }
+
+        let mut i = 0;
+
+        loop{
+            let Some(group) = groups.get(i) else{
+                break;
+            };
+
+            if group.users.is_empty(){
+                group.cleanup_for_deletion(ctx.clone(), &data.ids).await;
+                debug!("Removing empty group: {}", group.invite_code);
+                groups.remove(i);
+                continue;
+            }
+
+            i += 1
+        }
+    }
+
     async fn message(&self, ctx: Context, message: Message) {
         use crate::bot::command;
         'help: {
-            let Some(args) = command::parse(&message, "help", command::Case::Insensitive , command::Prefix::Yes) else{
+            let Some(_args) = command::parse(
+                &message,
+                "help",
+                command::Case::Insensitive,
+                command::Prefix::Yes,
+            ) else {
                 break 'help;
             };
 
-            message.reply(ctx.http, "Temporary help message").await.unwrap();
+            message
+                .reply(ctx.http, "Temporary help message")
+                .await
+                .unwrap();
         }
-        
+
         // debug!("Message: {message:?}")
     }
-}
+    async fn interaction_create(&self, ctx: Context, i: serenity::all::Interaction) {
+        let Interaction::Command(c) = i else {
+            return;
+        };
 
+        for option in c.data.options.iter() {
+            println!("{option:?}");
+        }
+
+        if let Err(e) = c
+            .create_response(
+                ctx.http,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content("Content")
+                        .embed(
+                            CreateEmbed::new()
+                                .author(CreateEmbedAuthor::new("Me"))
+                                .title("This is a title")
+                                .description("Simple description")
+                                .footer(CreateEmbedFooter::new("Footer")),
+                        )
+                        .ephemeral(true),
+                ),
+            )
+            .await
+        {
+            error!(
+                "Failed to send a reponse to command {} due to: {e}",
+                c.data.name
+            )
+        }
+    }
+}

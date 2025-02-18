@@ -38,7 +38,8 @@ impl EventHandler for Logger {
 
         trace!(
             "{} sent '{}' in {guild_name}",
-            message.author.name, message.content
+            message.author.name,
+            message.content
         );
     }
 }

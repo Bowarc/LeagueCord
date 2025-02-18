@@ -35,13 +35,9 @@ pub fn logger_config() -> Vec<logger::Config> {
 }
 
 pub async fn build_rocket() -> rocket::Rocket<rocket::Ignite> {
-
     rocket::build()
         .register("/", rocket::catchers![catchers::root_403])
-        .register(
-            "/upload",
-            rocket::catchers![catchers::upload_400],
-        )
+        .register("/upload", rocket::catchers![catchers::upload_400])
         .mount(
             "/",
             rocket::routes![

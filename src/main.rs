@@ -43,7 +43,7 @@ fn setup_loggers() {
             .colored(false)
             .level(log::LevelFilter::Off) // Disable everything by default to make it bot-specific
             .filters(DEP_FILTERS)
-            .filter("server", LevelFilter::Trace),
+            .filter("bot", LevelFilter::Trace),
     ])
 }
 

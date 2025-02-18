@@ -15,7 +15,7 @@ pub enum Message {
 pub enum Scene {
     Home,
     About,
-    Contact
+    Contact,
 }
 
 pub struct App {
