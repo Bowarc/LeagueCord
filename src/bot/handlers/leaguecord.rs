@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use serenity::all::{
-    CommandOptionType, CommandType, CreateChannel, CreateCommand, CreateCommandOption, CreateEmbed,
+    CreateChannel, CreateCommand, CreateEmbed,
     CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
     CreateInteractionResponseMessage, CreateMessage, GuildId, Interaction, Member, Mentionable,
     User,
@@ -153,7 +153,7 @@ impl EventHandler for LeagueCord {
     async fn guild_member_addition(
         &self,
         ctx: Context,
-        mut new_member: serenity::model::prelude::Member,
+        new_member: serenity::model::prelude::Member,
     ) {
         // Get a read ref of the data
         let ctx_data_storage = ctx.data.clone();
@@ -204,45 +204,30 @@ impl EventHandler for LeagueCord {
                     .kick_with_reason(ctx.http.clone(), "Not appart of a valid group")
                     .await
                 {
-                    error!(
-                        "Failed to kick new member '{}'({}) due to: {e}",
-                        new_member.display_name(),
-                        new_member.user.id
-                    );
-                    let _ignored = data
-                        .ids
-                        .bot_log_channel
-                        .send_message(
-                            ctx.http.clone(),
-                            CreateMessage::new().content(format!(
-                                "Failed to kick new member: '{}'({}) due to {e}",
-                                new_member.display_name(),
-                                new_member.user.id
-                            )),
-                        )
-                        .await;
+                    super::log_error(
+                        ctx.clone(),
+                        &data.ids,
+                        &format!(
+                            "Failed to kick new member '{}'({}) due to: {e}",
+                            new_member.display_name(),
+                            new_member.user.id
+                        ),
+                    )
+                    .await
                 };
                 return;
             };
             if let Err(e) = new_member.add_role(ctx.http.clone(), group.role).await {
-                error!(
-                    "Failed to set group role for new member: '{}'({}) due to: {e}",
-                    new_member.display_name(),
-                    new_member.user.id
-                );
-
-                let _ignored = data
-                    .ids
-                    .bot_log_channel
-                    .send_message(
-                        ctx.http.clone(),
-                        CreateMessage::new().content(format!(
-                            "Failed to set group role for new member: '{}'({}) due to {e}",
-                            new_member.display_name(),
-                            new_member.user.id
-                        )),
-                    )
-                    .await;
+                super::log_error(
+                    ctx.clone(),
+                    &data.ids,
+                    &format!(
+                        "Failed to set group role for new member: '{}'({}) due to: {e}",
+                        new_member.display_name(),
+                        new_member.user.id
+                    ),
+                )
+                .await
             }
             group.users.push(new_member.user.id);
 
@@ -274,43 +259,31 @@ impl EventHandler for LeagueCord {
                 "Failed to find what invite user {}({}) used to join the server",
                 new_member.user.name, new_member.user.id
             );
-            println!("e");
-            if let Err(e) = new_member.kick_with_reason(ctx.http.clone(), "Could not find the invite the user joined with").await {
-                error!(
-                    "Failed to kick {}({}) due to {e}",
-                    new_member.user.name, new_member.user.id
-                );
-                let _ignored = data
-                    .ids
-                    .bot_log_channel
-                    .send_message(
-                        ctx.http.clone(),
-                        CreateMessage::new().content(format!(
-                            "Failed to kick new member: '{}'({}) due to {e}",
-                            new_member.display_name(),
-                            new_member.user.id
-                        )),
-                    )
-                    .await;
+            if let Err(e) = new_member
+                .kick_with_reason(
+                    ctx.http.clone(),
+                    "Could not find the invite the user joined with",
+                )
+                .await
+            {
+                super::log_error(
+                    ctx.clone(),
+                    &data.ids,
+                    &format!(
+                        "Failed to kick {}({}) due to {e}",
+                        new_member.user.name, new_member.user.id
+                    ),
+                )
+                .await;
             }
             // TODO: Better user message.
-            if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
-                error!(
-                    "Failed dm {}({}) due to {e}",
-                    new_member.user.name, new_member.user.id
-                );
-                let _ignored = data
-                    .ids
-                    .bot_log_channel
-                    .send_message(
-                        ctx.http.clone(),
-                        CreateMessage::new().content(format!(
-                            "Failed to dm new member: '{}'({}) due to {e}",
-                            new_member.display_name(),
-                            new_member.user.id
-                        )),
-                    )
-                    .await;
+            {
+                if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
+                    super::log_error(ctx.clone(), &data.ids, &format!(
+                        "Failed dm {}({}) due to {e}",
+                        new_member.user.name, new_member.user.id
+                    )).await;
+                }
             }
         }
         // Found multiple invites that changed since last check
@@ -320,43 +293,31 @@ impl EventHandler for LeagueCord {
                 "Failed to find what invite user {}({}) used to join the server",
                 new_member.user.name, new_member.user.id
             );
-            println!("e");
-            if let Err(e) = new_member.kick_with_reason(ctx.http.clone(), "Could not find the invite the user joined with").await {
-                error!(
-                    "Failed to kick {}({}) due to {e}",
-                    new_member.user.name, new_member.user.id
-                );
-                let _ignored = data
-                    .ids
-                    .bot_log_channel
-                    .send_message(
-                        ctx.http.clone(),
-                        CreateMessage::new().content(format!(
-                            "Failed to kick new member: '{}'({}) due to {e}",
-                            new_member.display_name(),
-                            new_member.user.id
-                        )),
-                    )
-                    .await;
+            if let Err(e) = new_member
+                .kick_with_reason(
+                    ctx.http.clone(),
+                    "Could not find the invite the user joined with",
+                )
+                .await
+            {
+                super::log_error(
+                    ctx.clone(),
+                    &data.ids,
+                    &format!(
+                        "Failed to kick {}({}) due to {e}",
+                        new_member.user.name, new_member.user.id
+                    ),
+                )
+                .await;
             }
             // TODO: Better user message.
-            if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
-                error!(
-                    "Failed dm {}({}) due to {e}",
-                    new_member.user.name, new_member.user.id
-                );
-                let _ignored = data
-                    .ids
-                    .bot_log_channel
-                    .send_message(
-                        ctx.http.clone(),
-                        CreateMessage::new().content(format!(
-                            "Failed to dm new member: '{}'({}) due to {e}",
-                            new_member.display_name(),
-                            new_member.user.id
-                        )),
-                    )
-                    .await;
+            {
+                if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
+                    super::log_error(ctx.clone(), &data.ids, &format!(
+                        "Failed dm {}({}) due to {e}",
+                        new_member.user.name, new_member.user.id
+                    )).await;
+                }
             }
             // multiple matches
             // Send them to a channel that request them to send the invite link or the group code idfk
@@ -391,12 +352,12 @@ impl EventHandler for LeagueCord {
 
         let mut i = 0;
 
-        loop{
-            let Some(group) = groups.get(i) else{
+        loop {
+            let Some(group) = groups.get(i) else {
                 break;
             };
 
-            if group.users.is_empty(){
+            if group.users.is_empty() {
                 group.cleanup_for_deletion(ctx.clone(), &data.ids).await;
                 debug!("Removing empty group: {}", group.invite_code);
                 groups.remove(i);

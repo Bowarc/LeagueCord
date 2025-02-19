@@ -1,4 +1,3 @@
-
 use serenity::all::EditChannel;
 
 use serenity::all::{Context, EventHandler, Message};
@@ -83,7 +82,9 @@ async fn cleanup(ctx: Context, message: &Message) {
     // Channels
     {
         for (id, mut channel) in guild.channels(ctx.http.clone()).await.unwrap() {
-            if !channel.name.starts_with("g") && channel.name.parse::<u64>().is_err() || channel.id == data.ids.graveyard_category {
+            if !channel.name.starts_with("g") && channel.name.parse::<u64>().is_err()
+                || channel.id == data.ids.graveyard_category
+            {
                 continue;
             }
 

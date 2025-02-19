@@ -60,7 +60,7 @@ impl Component for App {
             </div>
             <div id="content">
                 {
-                    self.current_scene.html(ctx)
+                    self.current_scene.html()
                 }
                 <component::NotificationManager />
             </div>
@@ -73,7 +73,7 @@ impl Component for App {
 }
 
 impl Scene {
-    fn html(&self, ctx: &Context<App>) -> yew::virtual_dom::VNode {
+    fn html(&self) -> yew::virtual_dom::VNode {
         match self {
             Scene::Home => {
                 html! {<><scene::Home /></>}

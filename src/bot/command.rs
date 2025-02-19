@@ -1,12 +1,15 @@
 pub const DEFAULT_PREFIX: &str = "!";
 const EMPTY_STR: &str = ""; // This is more convenient for lifetime issues
 
+
+#[allow(dead_code)]
 #[derive(PartialEq)]
 pub enum Case {
     Sensitive,
     Insensitive,
 }
 
+#[allow(dead_code)]
 #[derive(PartialEq)]
 pub enum Prefix {
     Yes,
