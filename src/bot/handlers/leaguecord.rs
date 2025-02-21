@@ -1,36 +1,19 @@
+use crate::data::InviteTracker;
+
 use {
-    crate::data::{IdCache, InviteCode, InviteUseCount, LeagueCordData},
+    crate::data::{IdCache, LeagueCordData},
     serenity::all::{Context, EventHandler, Message},
     serenity::all::{
         CreateChannel, CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
         CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, GuildId,
         Interaction, Member, Mentionable, User,
     },
+    std::sync::Arc,
     std::time::Duration,
-    std::{collections::HashMap, sync::Arc},
     tokio::sync::RwLock,
 };
 
 pub struct LeagueCord;
-
-pub async fn build_invite_list(
-    ctx: Context,
-    ids: &IdCache,
-) -> Result<HashMap<InviteCode, InviteUseCount>, String> {
-    let Ok(invite_list) = ctx.http.get_guild_invites(ids.guild).await else {
-        return Err(format!(
-            "Could not get the invite list for guild: {:?}",
-            ids.guild
-        ));
-    };
-
-    let out = invite_list
-        .into_iter()
-        .map(|invite| (invite.code, invite.uses))
-        .collect();
-
-    Ok(out)
-}
 
 #[serenity::async_trait]
 impl EventHandler for LeagueCord {
@@ -117,9 +100,7 @@ impl EventHandler for LeagueCord {
             bot_log_channel,
         };
 
-        let invites = build_invite_list(ctx.clone(), &id_cache)
-            .await
-            .unwrap_or_default();
+        let invites = InviteTracker::new(ctx.http, &id_cache).await.unwrap();
 
         let data = LeagueCordData {
             ids: Arc::new(id_cache),
@@ -163,7 +144,7 @@ impl EventHandler for LeagueCord {
             .iter()
             .filter(|invite| {
                 let Some(saved_invite_use_count) = saved_invites_lock.get(&invite.code) else {
-                    println!("New invite: {invite:?}");
+                    debug!("New invite: {invite:?}");
                     return false;
                 };
 
@@ -182,6 +163,7 @@ impl EventHandler for LeagueCord {
                 .iter_mut()
                 .find(|group| group.invite_code == invite.code)
             else {
+                warn!("User {} tried to join with an invite that did not correspond to any group.", new_member.user.name);
                 if let Err(e) = new_member
                     .kick_with_reason(ctx.http.clone(), "Not appart of a valid group")
                     .await
@@ -307,7 +289,10 @@ impl EventHandler for LeagueCord {
 
         // Force update the invite list
 
-        *saved_invites_lock = build_invite_list(ctx, &data.ids).await.unwrap()
+        saved_invites_lock
+            .update(ctx.http, &data.ids)
+            .await
+            .unwrap();
     }
 
     async fn guild_member_removal(

@@ -1,3 +1,8 @@
+#[path = "routes/create_group.rs"]
+mod create_group_route;
+
+pub use create_group_route::create_group;
+
 #[rocket::get("/")]
 pub async fn root(remote_addr: std::net::SocketAddr) -> super::response::Response {
     use rocket::http::ContentType;

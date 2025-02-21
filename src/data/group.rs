@@ -1,3 +1,5 @@
+use serenity::all::CacheHttp;
+
 use {
     super::id_cache::IdCache,
     serenity::all::{
@@ -36,34 +38,30 @@ impl Group {
         name[1..].parse::<GroupId>().ok()
     }
 
-    pub async fn create_new(ctx: Context, ids: &IdCache) -> Result<Self, String> {
+    pub async fn create_new(http: impl CacheHttp, ids: &IdCache) -> Result<Self, String> {
+        let http = http.http();
         let group_id = random::get(0, u64::MAX);
 
         let name = Self::name_for_id(group_id);
 
-        let guild = ctx
-            .http
-            .clone()
-            .get_guild(ids.guild)
-            .await
-            .map_err(|e| e.to_string())?;
+        let guild = http.get_guild(ids.guild).await.map_err(|e| e.to_string())?;
 
         let (category, role) = match futures::join!(
             guild.create_channel(
-                ctx.http.clone(),
+                http,
                 CreateChannel::new(&name).kind(ChannelType::Category),
             ),
-            guild.create_role(ctx.http.clone(), EditRole::new().name(&name))
+            guild.create_role(http, EditRole::new().name(&name))
         ) {
             (Ok(c), Ok(r)) => (c, r),
             (Ok(c), Err(e)) => {
-                if let Err(e) = c.delete(ctx.http.clone()).await {
+                if let Err(e) = c.delete(http).await {
                     error!("Failed to cleanup role due to {e}");
                 }
                 return Err(e.to_string());
             }
             (Err(e), Ok(mut r)) => {
-                if let Err(e) = r.delete(ctx.http.clone()).await {
+                if let Err(e) = r.delete(http).await {
                     error!("Failed to cleanup role due to {e}");
                 }
                 return Err(e.to_string());
@@ -103,14 +101,14 @@ impl Group {
 
         let (text_channel, voice_channel) = match futures::join!(
             guild.create_channel(
-                ctx.http.clone(),
+                http,
                 channel_base.clone().kind(ChannelType::Text),
             ),
-            guild.create_channel(ctx.http.clone(), channel_base.kind(ChannelType::Voice))
+            guild.create_channel(http, channel_base.kind(ChannelType::Voice))
         ) {
             (Ok(text), Ok(voice)) => (text, voice),
             (Ok(c), Err(e)) | (Err(e), Ok(c)) => {
-                if let Err(e) = c.delete(ctx.http.clone()).await {
+                if let Err(e) = c.delete(http).await {
                     error!("Failed to cleanup channel {c} due to: {e}");
                 }
                 return Err(e.to_string());
@@ -122,7 +120,7 @@ impl Group {
 
         let invite = text_channel
             .create_invite(
-                ctx,
+                http,
                 CreateInvite::new()
                     .max_age(900) // 15 mins
                     .unique(true)
@@ -150,6 +148,7 @@ impl Group {
     pub async fn cleanup_for_deletion(&self, ctx: Context, ids: &IdCache) {
         // The invitation is automatically deleted when removing the associated channel
 
+        // kick users
         for id in self.users.iter() {
             if let Err(e) = ctx
                 .http
@@ -161,8 +160,8 @@ impl Group {
             }
         }
 
+        // remove channels
         let mut set = JoinSet::new();
-
         set.spawn(self.voice_channel.delete(ctx.http.clone()));
         set.spawn(self.text_channel.delete(ctx.http.clone()));
         set.spawn(self.category.delete(ctx.http.clone()));
@@ -179,6 +178,7 @@ impl Group {
             }
         }
 
+        // remove role
         if let Err(e) = ids.guild.delete_role(ctx.http, self.role).await {
             error!("Failed to delete role for group {} due to {e}", self.id)
         }

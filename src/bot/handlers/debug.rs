@@ -2,7 +2,7 @@ use serenity::all::EditChannel;
 
 use serenity::all::{Context, EventHandler, Message};
 
-use crate::data::{LeagueCordData, Group};
+use crate::data::{Group, LeagueCordData};
 
 pub struct Debug;
 
@@ -47,14 +47,14 @@ async fn create_group(ctx: Context, message: &Message) {
         return;
     };
 
-    let new_group = Group::create_new(ctx.clone(), &data.ids)
-        .await
-        .unwrap();
+    let new_group = Group::create_new(ctx.clone(), &data.ids).await.unwrap();
     let code = new_group.invite_code.clone();
     data.groups.write().await.push(new_group);
 
-    let mut x = data.invites.write().await;
-    *x = super::leaguecord::build_invite_list(ctx.clone(), &data.ids)
+    data.invites
+        .write()
+        .await
+        .update(ctx.http.clone(), &data.ids)
         .await
         .unwrap();
 
@@ -79,6 +79,15 @@ async fn cleanup(ctx: Context, message: &Message) {
         return;
     };
 
+    // Groups
+    {
+        for group in data.groups.read().await.iter(){
+            group.cleanup_for_deletion(ctx.clone(), &data.ids).await
+        }
+    }
+
+    // Remove any other artefacts in case they were not registed in a group (ex. server restarted)
+    
     let guild = ctx.http.get_guild(data.ids.guild).await.unwrap();
 
     // Channels

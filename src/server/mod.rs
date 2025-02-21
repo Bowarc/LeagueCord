@@ -22,6 +22,7 @@ pub async fn build_rocket(
             "/",
             rocket::routes![
                 routes::root,
+                routes::create_group,
                 routes::front_js,
                 routes::front_bg_wasm,
                 routes::index_html,
