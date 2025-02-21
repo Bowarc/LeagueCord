@@ -2,7 +2,7 @@ use serenity::all::EditChannel;
 
 use serenity::all::{Context, EventHandler, Message};
 
-use crate::data::group::Group;
+use crate::data::{LeagueCordData, Group};
 
 pub struct Debug;
 
@@ -11,7 +11,7 @@ impl EventHandler for Debug {
     async fn message(&self, ctx: Context, message: Message) {
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
-        let Some(data) = ctx_data_storage_read.get::<super::leaguecord::LeagueCordData>() else {
+        let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
             error!("Could not get tracked invites from data");
             return;
         };
@@ -42,7 +42,7 @@ async fn create_group(ctx: Context, message: &Message) {
 
     let ctx_data_storage = ctx.data.clone();
     let ctx_data_storage_read = ctx_data_storage.read().await;
-    let Some(data) = ctx_data_storage_read.get::<super::leaguecord::LeagueCordData>() else {
+    let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
         error!("Could not get tracked invites from data");
         return;
     };
@@ -74,7 +74,7 @@ async fn cleanup(ctx: Context, message: &Message) {
 
     let ctx_data_storage = ctx.data.clone();
     let ctx_data_storage_read = ctx_data_storage.read().await;
-    let Some(data) = ctx_data_storage_read.get::<super::leaguecord::LeagueCordData>() else {
+    let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
         error!("Could not get tracked invites from data");
         return;
     };

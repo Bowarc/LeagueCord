@@ -39,7 +39,6 @@ pub async fn run_threaded(// dispatcher_sender: Option<std::sync::mpsc::Sender<(
         client.http.clone(),
         client.data.clone(),
         tokio::task::spawn(async move {
-            debug!("Start");
             if let Err(why) = client.start().await {
                 println!("Client error: {why:?}");
             }

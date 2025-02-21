@@ -1,3 +1,5 @@
+use data::LeagueCordData;
+
 #[macro_use(trace, debug, info, warn, error)]
 extern crate log;
 
@@ -58,6 +60,14 @@ async fn main() {
 
     let (http, data, _handle) = bot::run_threaded().await;
 
+    let lc_data = loop{
+        let data_read = data.read().await;
+        let Some(lc_data) = data_read.get::<LeagueCordData>() else{
+            continue
+        };
+        break lc_data.clone();
+    };
+
     // Small print to show the start of the program log in the file
     trace!(
         "\n╭{line}╮\n│{message:^30}│\n╰{line}╯",
@@ -65,7 +75,7 @@ async fn main() {
         message = "Program start"
     );
 
-    let rocket = server::build_rocket(http, data).await;
+    let rocket = server::build_rocket(http, lc_data).await;
 
     display_config(rocket.config(), rocket.routes(), rocket.catchers());
 

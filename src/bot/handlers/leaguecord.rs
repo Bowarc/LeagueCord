@@ -1,36 +1,17 @@
-use std::time::Duration;
-
-use serenity::all::{
-    CreateChannel, CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
-    CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, GuildId,
-    Interaction, Member, Mentionable, User,
-};
-
-use crate::data::{group::Group, id_cache::IdCache, InviteCode, InviteUseCount};
-
 use {
-    serenity::{
-        all::{Context, EventHandler, Message},
-        prelude::TypeMapKey,
+    crate::data::{IdCache, InviteCode, InviteUseCount, LeagueCordData},
+    serenity::all::{Context, EventHandler, Message},
+    serenity::all::{
+        CreateChannel, CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
+        CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, GuildId,
+        Interaction, Member, Mentionable, User,
     },
+    std::time::Duration,
     std::{collections::HashMap, sync::Arc},
     tokio::sync::RwLock,
 };
 
-// pub mod data;
-
 pub struct LeagueCord;
-
-#[derive(Debug, Clone)]
-pub struct LeagueCordData {
-    pub ids: Arc<IdCache>,
-    pub invites: Arc<RwLock<HashMap<InviteCode, InviteUseCount>>>,
-    pub groups: Arc<RwLock<Vec<Group>>>,
-}
-
-impl TypeMapKey for LeagueCordData {
-    type Value = Self;
-}
 
 pub async fn build_invite_list(
     ctx: Context,

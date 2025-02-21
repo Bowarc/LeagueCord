@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
-use serenity::{all::Http, prelude::TypeMap};
-use tokio::sync::RwLock;
+use serenity::all::Http;
+
+use crate::data::LeagueCordData;
 
 pub mod catchers;
 pub mod error;
@@ -10,7 +11,7 @@ pub mod routes;
 
 pub async fn build_rocket(
     http: Arc<Http>,
-    data: Arc<RwLock<TypeMap>>,
+    data: LeagueCordData,
 ) -> rocket::Rocket<rocket::Ignite> {
     rocket::build()
         .manage(http)
