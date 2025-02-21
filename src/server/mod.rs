@@ -1,10 +1,20 @@
+use std::sync::Arc;
+
+use serenity::{all::Http, prelude::TypeMap};
+use tokio::sync::RwLock;
+
 pub mod catchers;
 pub mod error;
 pub mod response;
 pub mod routes;
 
-pub async fn build_rocket() -> rocket::Rocket<rocket::Ignite> {
+pub async fn build_rocket(
+    http: Arc<Http>,
+    data: Arc<RwLock<TypeMap>>,
+) -> rocket::Rocket<rocket::Ignite> {
     rocket::build()
+        .manage(http)
+        .manage(data)
         .register("/", rocket::catchers![catchers::root_403])
         .register("/upload", rocket::catchers![catchers::upload_400])
         .mount(

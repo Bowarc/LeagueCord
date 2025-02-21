@@ -3,6 +3,7 @@ extern crate log;
 
 mod bot;
 mod server;
+mod data;
 
 fn setup_loggers() {
     use log::LevelFilter;
@@ -55,7 +56,7 @@ async fn main() {
 
     dotenv::dotenv().unwrap();
 
-    bot::run_threaded().await;
+    let (http, data, _handle) = bot::run_threaded().await;
 
     // Small print to show the start of the program log in the file
     trace!(
@@ -64,7 +65,7 @@ async fn main() {
         message = "Program start"
     );
 
-    let rocket = server::build_rocket().await;
+    let rocket = server::build_rocket(http, data).await;
 
     display_config(rocket.config(), rocket.routes(), rocket.catchers());
 

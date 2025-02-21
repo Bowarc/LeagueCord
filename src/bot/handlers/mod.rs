@@ -10,11 +10,9 @@ pub use leaguecord::LeagueCord;
 // pub use logger::Logger;
 pub use purge::Purge;
 
-pub async fn log_error(
-    ctx: serenity::all::Context,
-    ids: &leaguecord::data::IdCache,
-    message: &str,
-) {
+use crate::data::id_cache::IdCache;
+
+pub async fn log_error(ctx: serenity::all::Context, ids: &IdCache, message: &str) {
     use serenity::all::CreateMessage;
 
     error!("{message}");

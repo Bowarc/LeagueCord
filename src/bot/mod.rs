@@ -1,14 +1,18 @@
+use std::sync::Arc;
+
 // use futures::FutureExt;
 use serenity::{
-    all::{ActivityData, ApplicationId, GatewayIntents},
+    all::{ActivityData, ApplicationId, GatewayIntents, Http},
+    prelude::TypeMap,
     Client,
 };
+use tokio::sync::RwLock;
 
 mod command;
 mod handlers;
 
 pub async fn run_threaded(// dispatcher_sender: Option<std::sync::mpsc::Sender<(Context, FullEvent)>>,
-) -> tokio::task::JoinHandle<()> {
+) -> (Arc<Http>, Arc<RwLock<TypeMap>>, tokio::task::JoinHandle<()>) {
     // Login with a bot token from the environment
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     // Set gateway intents, which decides what events the bot will be notified about
@@ -31,10 +35,14 @@ pub async fn run_threaded(// dispatcher_sender: Option<std::sync::mpsc::Sender<(
 
     let mut client = cb.await.unwrap();
 
-    tokio::task::spawn(async move {
-        debug!("Start");
-        if let Err(why) = client.start().await {
-            println!("Client error: {why:?}");
-        }
-    })
+    (
+        client.http.clone(),
+        client.data.clone(),
+        tokio::task::spawn(async move {
+            debug!("Start");
+            if let Err(why) = client.start().await {
+                println!("Client error: {why:?}");
+            }
+        }),
+    )
 }

@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use serenity::all::{
-    CreateChannel, CreateCommand, CreateEmbed,
-    CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
-    CreateInteractionResponseMessage, CreateMessage, GuildId, Interaction, Member, Mentionable,
-    User,
+    CreateChannel, CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
+    CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, GuildId,
+    Interaction, Member, Mentionable, User,
 };
+
+use crate::data::{group::Group, id_cache::IdCache, InviteCode, InviteUseCount};
 
 use {
     serenity::{
@@ -16,15 +17,15 @@ use {
     tokio::sync::RwLock,
 };
 
-pub mod data;
+// pub mod data;
 
 pub struct LeagueCord;
 
 #[derive(Debug, Clone)]
 pub struct LeagueCordData {
-    pub ids: Arc<data::IdCache>,
-    pub invites: Arc<RwLock<HashMap<data::InviteCode, data::InviteUseCount>>>,
-    pub groups: Arc<RwLock<Vec<data::Group>>>,
+    pub ids: Arc<IdCache>,
+    pub invites: Arc<RwLock<HashMap<InviteCode, InviteUseCount>>>,
+    pub groups: Arc<RwLock<Vec<Group>>>,
 }
 
 impl TypeMapKey for LeagueCordData {
@@ -33,8 +34,8 @@ impl TypeMapKey for LeagueCordData {
 
 pub async fn build_invite_list(
     ctx: Context,
-    ids: &data::IdCache,
-) -> Result<HashMap<data::InviteCode, data::InviteUseCount>, String> {
+    ids: &IdCache,
+) -> Result<HashMap<InviteCode, InviteUseCount>, String> {
     let Ok(invite_list) = ctx.http.get_guild_invites(ids.guild).await else {
         return Err(format!(
             "Could not get the invite list for guild: {:?}",
@@ -120,7 +121,7 @@ impl EventHandler for LeagueCord {
             }
         };
 
-        let id_cache = data::IdCache {
+        let id_cache = IdCache {
             guild: guild.id,
             admin_role: ctx
                 .http

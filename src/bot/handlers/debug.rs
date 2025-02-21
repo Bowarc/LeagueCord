@@ -2,6 +2,8 @@ use serenity::all::EditChannel;
 
 use serenity::all::{Context, EventHandler, Message};
 
+use crate::data::group::Group;
+
 pub struct Debug;
 
 #[serenity::async_trait]
@@ -45,7 +47,7 @@ async fn create_group(ctx: Context, message: &Message) {
         return;
     };
 
-    let new_group = super::leaguecord::data::Group::create_new(ctx.clone(), &data.ids)
+    let new_group = Group::create_new(ctx.clone(), &data.ids)
         .await
         .unwrap();
     let code = new_group.invite_code.clone();
