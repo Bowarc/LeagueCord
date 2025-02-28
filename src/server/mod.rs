@@ -9,6 +9,11 @@ pub mod error;
 pub mod response;
 pub mod routes;
 
+#[rocket::get("/404")]
+async fn notfound(remote_addr: std::net::SocketAddr) -> response::Response{
+    routes::root(remote_addr).await
+}
+
 pub async fn build_rocket(
     http: Arc<Http>,
     data: LeagueCordData,
@@ -17,12 +22,13 @@ pub async fn build_rocket(
         .manage(http)
         .manage(data)
         .manage(GroupCreationSpamTracker::default())
-        .register("/", rocket::catchers![catchers::root_403])
+        .register("/", rocket::catchers![catchers::root_403, catchers::root_404])
         .register("/upload", rocket::catchers![catchers::upload_400])
         .mount(
             "/",
             rocket::routes![
                 routes::root,
+                notfound,
                 routes::create_group,
                 routes::front_js,
                 routes::front_bg_wasm,

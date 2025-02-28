@@ -1,96 +1,43 @@
-use {
-    js_sys::Date,
-    yew::{html, Component, Context, Html},
-};
+use yew::{html, Context, Html};
+use yew_router::{BrowserRouter, Routable, Switch};
 
-mod component;
 mod scene;
+mod component;
+mod apps;
 mod utils;
 
-pub enum Message {
-    SwitchScene(Scene),
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Scene {
+#[derive(Debug, Clone, Copy, PartialEq, Routable)]
+enum Route {
+    #[at("/")]
     Home,
-    About,
-    Contact,
-}
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}    
+pub struct App;
 
-pub struct App {
-    current_scene: Scene,
-}
+impl yew::Component for App {
+    type Message = ();
 
-impl Component for App {
-    type Message = Message;
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-            current_scene: Scene::Home,
-        }
+        Self
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Message::SwitchScene(scene) => {
-                self.current_scene = scene;
-                true
-            }
-        }
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div id="global">
-            <div id="header">
-                <a class="header_item" href="http://github.com/Bowarc/storage_server">
-                    <img src="resources/github.webp" alt="Github icon" class="icon"/>
-                </a>
-                <div id="scene_list" class="header_item">{
-                    [ Scene::Home, Scene::About, Scene::Contact ].iter().map(|scene|{
-                        html!{
-                            <button class={format!("scene_button{}", if &self.current_scene == scene {" current"} else{""})} onclick={ctx.link().callback(|_| Message::SwitchScene(*scene))}>
-                                { format!("{scene}") }
-                            </button>
-                        }
-                    }).collect::<Vec<yew::virtual_dom::VNode>>()
-                }</div>
-            </div>
-            <div id="content">
-                {
-                    self.current_scene.html()
-                }
-                <component::NotificationManager />
-            </div>
-            <footer>
-                { format!("Rendered: {}", String::from(Date::new_0().to_string())) }
-            </footer>
-            </div>
+    fn view(&self, _ctx: &Context<Self>) -> yew::prelude::Html {
+        html!{
+            <BrowserRouter>
+                <Switch<Route> render={switch} />
+            </BrowserRouter>
         }
     }
 }
 
-impl Scene {
-    fn html(&self) -> yew::virtual_dom::VNode {
-        match self {
-            Scene::Home => {
-                html! {<><scene::Home /></>}
-            }
-            Scene::About => html! {<><scene::About /></>},
-            Scene::Contact => html! {<><scene::Contact /></>},
-        }
-    }
-}
-
-impl std::fmt::Display for Scene {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Scene::Home => write!(f, "Home"),
-            Scene::About => write!(f, "About"),
-            Scene::Contact => write!(f, "Contact"),
-        }
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! { <apps::HomeApp /> },
+        Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
 
