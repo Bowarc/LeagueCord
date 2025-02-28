@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use serenity::all::Http;
 
-use crate::data::LeagueCordData;
+use crate::data::{LeagueCordData, GroupCreationSpamTracker};
 
 pub mod catchers;
 pub mod error;
@@ -16,6 +16,7 @@ pub async fn build_rocket(
     rocket::build()
         .manage(http)
         .manage(data)
+        .manage(GroupCreationSpamTracker::default())
         .register("/", rocket::catchers![catchers::root_403])
         .register("/upload", rocket::catchers![catchers::upload_400])
         .mount(
