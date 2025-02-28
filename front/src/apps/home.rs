@@ -69,8 +69,8 @@ impl yew::Component for HomeApp {
         html! {
             <div id="global">
             <div id="header">
-                <a class="header_item" href="http://github.com/Bowarc/storage_server">
-                    <img src="resources/github.webp" alt="Github icon" class="icon"/>
+                <a class="header_item" href="http://github.com/Bowarc/leaguecord">
+                    <img src="/resources/github.webp" alt="Github icon" class="icon"/>
                 </a>
                 <div id="scene_list" class="header_item">{
                     scenes.into_iter().map(|scene|{

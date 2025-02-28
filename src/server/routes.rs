@@ -52,6 +52,7 @@ pub async fn static_resource(
 
     #[rustfmt::skip]
     const ALLOWED_FILES: &[&str] = &[
+        "github.webp"
     ];
 
     if !ALLOWED_FILES.contains(&file) {
@@ -73,7 +74,6 @@ pub async fn static_css(
     const ALLOWED_FILES: &[&str] = &[
         "contact.css",
         "home.css",
-        "upload.css",
         "notification.css",
         "style.css",
         "theme.css",
