@@ -13,6 +13,8 @@ enum Route {
     #[not_found]
     #[at("/404")]
     NotFound,
+    #[at("/group/:id")]
+    Group{id: u64}
 }    
 pub struct App;
 
@@ -36,7 +38,13 @@ impl yew::Component for App {
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => html! { <apps::HomeApp /> },
+        Route::Home => {
+            let group_id = None;
+            html! { <apps::HomeApp {group_id} /> }
+        },
+        Route::Group { id: group_id } => html!{
+            html! { <apps::HomeApp {group_id} /> }
+        },
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }

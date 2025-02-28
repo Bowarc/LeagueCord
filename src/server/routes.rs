@@ -1,7 +1,10 @@
 #[path = "routes/create_group.rs"]
 mod create_group_route;
+#[path = "routes/group.rs"]
+mod group_route;
 
 pub use create_group_route::create_group;
+pub use group_route::group;
 
 #[rocket::get("/")]
 pub async fn root(remote_addr: std::net::SocketAddr) -> super::response::Response {

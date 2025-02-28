@@ -23,13 +23,13 @@ pub async fn build_rocket(
         .manage(data)
         .manage(GroupCreationSpamTracker::default())
         .register("/", rocket::catchers![catchers::root_403, catchers::root_404])
-        .register("/upload", rocket::catchers![catchers::upload_400])
         .mount(
             "/",
             rocket::routes![
                 routes::root,
                 notfound,
                 routes::create_group,
+                routes::group,
                 routes::front_js,
                 routes::front_bg_wasm,
                 routes::index_html,
