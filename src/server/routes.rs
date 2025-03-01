@@ -4,7 +4,7 @@ mod create_group_route;
 mod group_route;
 
 pub use create_group_route::create_group;
-pub use group_route::group;
+pub use group_route::{group, group_data};
 
 #[rocket::get("/")]
 pub async fn root(remote_addr: std::net::SocketAddr) -> super::response::Response {

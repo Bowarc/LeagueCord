@@ -47,10 +47,7 @@ impl Group {
         let guild = http.get_guild(ids.guild).await.map_err(|e| e.to_string())?;
 
         let (category, role) = match futures::join!(
-            guild.create_channel(
-                http,
-                CreateChannel::new(&name).kind(ChannelType::Category),
-            ),
+            guild.create_channel(http, CreateChannel::new(&name).kind(ChannelType::Category),),
             guild.create_role(http, EditRole::new().name(&name))
         ) {
             (Ok(c), Ok(r)) => (c, r),
@@ -100,10 +97,7 @@ impl Group {
         });
 
         let (text_channel, voice_channel) = match futures::join!(
-            guild.create_channel(
-                http,
-                channel_base.clone().kind(ChannelType::Text),
-            ),
+            guild.create_channel(http, channel_base.clone().kind(ChannelType::Text),),
             guild.create_channel(http, channel_base.kind(ChannelType::Voice))
         ) {
             (Ok(text), Ok(voice)) => (text, voice),
@@ -182,5 +176,11 @@ impl Group {
         if let Err(e) = ids.guild.delete_role(ctx.http, self.role).await {
             error!("Failed to delete role for group {} due to {e}", self.id)
         }
+    }
+}
+
+impl Group {
+    pub fn to_data(&self) -> shared::GroupData {
+        shared::GroupData::new(self.id, self.users.len() as u32, self.invite_code.clone())
     }
 }

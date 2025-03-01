@@ -564,6 +564,8 @@ dependencies = [
  "gloo 0.11.0",
  "gloo-timers 0.3.0",
  "js-sys",
+ "serde_json",
+ "shared",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -1506,6 +1508,7 @@ dependencies = [
  "random",
  "rocket",
  "serenity",
+ "shared",
  "thiserror 2.0.11",
  "tokio",
  "tokio-util",
@@ -2141,6 +2144,7 @@ dependencies = [
  "rocket_codegen",
  "rocket_http",
  "serde",
+ "serde_json",
  "state",
  "tempfile",
  "time",
@@ -2484,6 +2488,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
