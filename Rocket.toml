@@ -2,6 +2,7 @@
 
 ## defaults for ALL profiles
 [default]
+ident = false
 # IP address to serve on.
 address = "192.168.1.39" # Local addr
 # Port to serve on.
