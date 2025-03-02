@@ -1,14 +1,10 @@
-use serenity::all::EditChannel;
-
-use serenity::all::{Context, EventHandler, Message};
-
-use crate::data::{Group, LeagueCordData};
-
 pub struct Debug;
 
 #[serenity::async_trait]
-impl EventHandler for Debug {
-    async fn message(&self, ctx: Context, message: Message) {
+impl serenity::all::EventHandler for Debug {
+    async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
+        use crate::data::LeagueCordData;
+
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
         let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
@@ -29,8 +25,12 @@ impl EventHandler for Debug {
     }
 }
 
-async fn create_group(ctx: Context, message: &Message) {
-    use crate::bot::command;
+async fn create_group(ctx: serenity::all::Context, message: &serenity::all::Message) {
+    use crate::{
+        bot::command,
+        data::{Group, LeagueCordData},
+    };
+
     let Some(_args) = command::parse(
         message,
         "cg",
@@ -61,8 +61,12 @@ async fn create_group(ctx: Context, message: &Message) {
     let _ = message.reply(ctx.http, format!("discord.gg/{code}")).await;
 }
 
-async fn cleanup(ctx: Context, message: &Message) {
-    use crate::bot::command;
+async fn cleanup(ctx: serenity::all::Context, message: &serenity::all::Message) {
+    use {
+        crate::{bot::command, data::LeagueCordData},
+        serenity::all::EditChannel,
+    };
+
     let Some(_args) = command::parse(
         message,
         "cleanup",
@@ -81,13 +85,13 @@ async fn cleanup(ctx: Context, message: &Message) {
 
     // Groups
     {
-        for group in data.groups.read().await.iter(){
+        for group in data.groups.read().await.iter() {
             group.cleanup_for_deletion(ctx.clone(), &data.ids).await
         }
     }
 
     // Remove any other artefacts in case they were not registed in a group (ex. server restarted)
-    
+
     let guild = ctx.http.get_guild(data.ids.guild).await.unwrap();
 
     // Channels

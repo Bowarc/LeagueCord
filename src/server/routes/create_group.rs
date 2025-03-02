@@ -1,20 +1,15 @@
-use std::sync::Arc;
-
-use rocket::{http::Status, State};
-use serenity::all::{CacheHttp, Http};
-
-use crate::{
-    data::{Group, GroupCreationSpamTracker, LeagueCordData},
-    server::response::{Response, ResponseBuilder},
-};
-
 #[rocket::get("/create_group")]
 pub async fn create_group(
-    lc_data: &State<LeagueCordData>,
-    http: &State<Arc<Http>>,
+    lc_data: &rocket::State<crate::data::LeagueCordData>,
+    http: &rocket::State<std::sync::Arc<serenity::all::Http>>,
     remote_addr: std::net::SocketAddr,
-    spam_tracker: &State<GroupCreationSpamTracker>,
-) -> Response {
+    spam_tracker: &rocket::State<crate::data::GroupCreationSpamTracker>,
+) -> super::super::response::Response {
+    use {
+        super::super::response::Response, crate::data::Group, rocket::http::Status,
+        serenity::all::CacheHttp as _,
+    };
+
     let ids = &lc_data.ids;
     spam_tracker.update().await;
 
@@ -26,7 +21,7 @@ pub async fn create_group(
             .iter()
             .find(|group| group.id == group_id)
         {
-            return ResponseBuilder::default()
+            return Response::builder()
                 .with_content(format!("http://discord.gg/{}\n", group.invite_code))
                 .build();
         }
@@ -50,14 +45,13 @@ pub async fn create_group(
                 .unwrap();
             lc_data.groups.write().await.push(group);
 
-
-            ResponseBuilder::default()
+            Response::builder()
                 .with_content(format!("http://discord.gg/{}\n", invite_code))
                 .build()
         }
         Err(e) => {
             error!("Failed to create group for {remote_addr} due to: {e}");
-            ResponseBuilder::default()
+            Response::builder()
                 .with_status(Status::InternalServerError)
                 .with_content("Failed to create a group".to_string())
                 .build()

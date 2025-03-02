@@ -1,19 +1,13 @@
-use std::time::Duration;
-
-use {
-    gloo::console::log,
-    std::{cell::RefCell, sync::Mutex},
-    yew::Callback,
-};
-
 // thread local: https://discord.com/channels/273534239310479360/1120124565591425034/1259034522888966164
 thread_local! {
     // const: https://discord.com/channels/273534239310479360/1120124565591425034/1259038525823651870
-    static CALLBACK: RefCell<Option<Callback<Notification>>> = const { RefCell::new(None) };
+    static CALLBACK: std::cell::RefCell<Option<yew::Callback<Notification>>> = const { std::cell::RefCell::new(None) };
 }
-static CURRENT_ID: Mutex<u32> = Mutex::new(0);
+static CURRENT_ID: std::sync::Mutex<u32> = std::sync::Mutex::new(0);
 
 pub fn push_notification(notification: Notification) {
+    use gloo::console::log;
+
     CALLBACK.with_borrow(|cb_opt| {
         let Some(cb) = cb_opt else {
             log!("[ERROR] Could not add notification: Notification storage not initialized");
@@ -130,6 +124,8 @@ impl yew::Component for NotificationManager {
     }
 
     fn update(&mut self, ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
+        use {gloo::console::log, std::time::Duration};
+
         match msg {
             Message::Push(notification) => {
                 // log!("Added notification");

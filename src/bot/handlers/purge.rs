@@ -1,13 +1,13 @@
-use {
-    crate::bot::command,
-    serenity::all::{Channel, Context, EventHandler, GetMessages, Message, MessageId},
-};
-
 pub struct Purge;
 
 #[serenity::async_trait]
-impl EventHandler for Purge {
-    async fn message(&self, ctx: Context, message: Message) {
+impl serenity::all::EventHandler for Purge {
+    async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
+        use {
+            crate::bot::command,
+            serenity::all::{Channel, GetMessages, MessageId},
+        };
+
         let Some(args) = command::parse(
             &message,
             "purge",

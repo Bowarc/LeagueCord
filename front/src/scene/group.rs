@@ -1,32 +1,21 @@
-use shared::GroupData;
-use wasm_bindgen::JsValue;
-
-use {
-    gloo::console::log,
-    wasm_bindgen::JsCast as _,
-    wasm_bindgen_futures::JsFuture,
-    web_sys::{window, Request, Response},
-    yew::{html, Properties},
-};
-
 pub struct Group {
     data_fetch_state: DataFetchState,
 }
 
-#[derive(Debug, PartialEq, Properties)]
+#[derive(Debug, PartialEq, yew::Properties)]
 pub struct Props {
     pub group_id: u64,
 }
 
 pub enum DataFetchState {
     Pending,
-    Received(GroupData),
-    Failed(JsValue),
+    Received(shared::GroupData),
+    Failed(wasm_bindgen::JsValue),
 }
 
 pub enum Message {
-    DataReceived(GroupData),
-    DataFetchError(JsValue),
+    DataReceived(shared::GroupData),
+    DataFetchError(wasm_bindgen::JsValue),
 }
 
 impl yew::Component for Group {
@@ -35,6 +24,14 @@ impl yew::Component for Group {
     type Properties = Props;
 
     fn create(ctx: &yew::prelude::Context<Self>) -> Self {
+        use {
+            gloo::console::log,
+            shared::GroupData,
+            wasm_bindgen::{JsCast as _, JsValue},
+            wasm_bindgen_futures::JsFuture,
+            web_sys::{window, Request, Response},
+        };
+
         let id = ctx.props().group_id;
         let request = match Request::new_with_str(&format!("/group_data/{id}")) {
             Ok(request) => request,
@@ -109,6 +106,8 @@ impl yew::Component for Group {
     }
 
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
+        use yew::html;
+
         let group_id = ctx.props().group_id;
 
         let body = match &self.data_fetch_state {

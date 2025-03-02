@@ -1,13 +1,3 @@
-use std::{
-    collections::HashMap,
-    net::IpAddr,
-    sync::Arc,
-    time::{Duration, Instant},
-};
-
-use serenity::prelude::TypeMapKey;
-use tokio::sync::RwLock;
-
 mod group;
 mod id_cache;
 mod invite_tracker;
@@ -22,22 +12,26 @@ pub type InviteUseCount = u64;
 
 #[derive(Debug, Clone)]
 pub struct LeagueCordData {
-    pub ids: Arc<IdCache>,
-    pub invites: Arc<RwLock<InviteTracker>>,
-    pub groups: Arc<RwLock<Vec<Group>>>,
+    pub ids: std::sync::Arc<IdCache>,
+    pub invites: std::sync::Arc<tokio::sync::RwLock<InviteTracker>>,
+    pub groups: std::sync::Arc<tokio::sync::RwLock<Vec<Group>>>,
 }
 
-impl TypeMapKey for LeagueCordData {
+impl serenity::prelude::TypeMapKey for LeagueCordData {
     type Value = Self;
 }
 
 #[derive(Default, Debug)]
-pub struct GroupCreationSpamTracker(RwLock<HashMap<IpAddr, (Instant, GroupId)>>);
+pub struct GroupCreationSpamTracker(
+    tokio::sync::RwLock<std::collections::HashMap<std::net::IpAddr, (std::time::Instant, GroupId)>>,
+);
 
-const TRACKER_DURATION: Duration = Duration::from_secs(60 * 5); // An ip can create a group every 5 minutes
+const TRACKER_DURATION: std::time::Duration = std::time::Duration::from_secs(60 * 5); // An ip can create a group every 5 minutes
 
 impl GroupCreationSpamTracker {
     pub async fn update(&self) {
+        use std::time::Instant;
+
         let now = Instant::now(); // Don't re-compute it each time
         self.0
             .write()
@@ -45,11 +39,13 @@ impl GroupCreationSpamTracker {
             .retain(|_ip, (instant, _id)| now - *instant < TRACKER_DURATION);
     }
 
-    pub async fn has(&self, ip: IpAddr) -> Option<GroupId> {
+    pub async fn has(&self, ip: std::net::IpAddr) -> Option<GroupId> {
         self.0.read().await.get(&ip).map(|(_, id)| *id)
     }
 
-    pub async fn register(&self, ip: IpAddr, group_id: GroupId) {
+    pub async fn register(&self, ip: std::net::IpAddr, group_id: GroupId) {
+        use std::time::Instant;
+
         if let Some(old) = self.0.write().await.insert(ip, (Instant::now(), group_id)) {
             warn!("Registering a new group in the SpamTracker returned an old value: {old:?}");
         }

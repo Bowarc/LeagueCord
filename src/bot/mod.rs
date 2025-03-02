@@ -1,18 +1,14 @@
-use std::sync::Arc;
-
-// use futures::FutureExt;
-use serenity::{
-    all::{ActivityData, ApplicationId, GatewayIntents, Http},
-    prelude::TypeMap,
-    Client,
-};
-use tokio::sync::RwLock;
-
 mod command;
 mod handlers;
 
 pub async fn run_threaded(// dispatcher_sender: Option<std::sync::mpsc::Sender<(Context, FullEvent)>>,
-) -> (Arc<Http>, Arc<RwLock<TypeMap>>, tokio::task::JoinHandle<()>) {
+) -> (
+    std::sync::Arc<serenity::all::Http>,
+    std::sync::Arc<tokio::sync::RwLock<serenity::prelude::TypeMap>>,
+    tokio::task::JoinHandle<()>,
+) {
+    use serenity::all::{ActivityData, ApplicationId, Client, GatewayIntents};
+
     // Login with a bot token from the environment
     let token = std::env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     // Set gateway intents, which decides what events the bot will be notified about

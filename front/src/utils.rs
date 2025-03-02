@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use {gloo::console::log, js_sys::Date};
-
 #[derive(Debug)]
 pub enum FetchState<T> {
     NotFetching,
@@ -10,7 +8,9 @@ pub enum FetchState<T> {
     Failed(wasm_bindgen::JsValue),
 }
 
-pub fn time_since(date: Date) -> String {
+pub fn time_since(date: js_sys::Date) -> String {
+    use js_sys::Date;
+
     let s =
         |n: i32, time: &str| -> String { format!("{n} {time}{}", if n > 1 { "s" } else { "" }) };
 
@@ -41,6 +41,8 @@ pub fn time_since(date: Date) -> String {
 }
 
 pub fn add_script(path: &str, id: &str) {
+    use gloo::console::log;
+
     let Some(window) = web_sys::window() else {
         log!(format!(
             "Could not set script {id} due to: Could not get the window"
@@ -62,6 +64,8 @@ pub fn add_script(path: &str, id: &str) {
 }
 
 pub fn remove_script(id: &str) {
+    use gloo::console::log;
+
     let Some(window) = web_sys::window() else {
         log!(format!(
             "Could not remove script {id} due to: Could not get the window"

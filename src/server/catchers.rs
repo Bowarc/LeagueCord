@@ -1,10 +1,9 @@
-use rocket::response::Redirect;
-
 #[rocket::catch(400)]
 pub fn upload_400(_req: &rocket::Request<'_>) -> super::response::Response {
+    use crate::server::response::Response;
     use rocket::http::{ContentType, Status};
 
-    super::response::ResponseBuilder::default()
+    Response::builder()
         .with_status(Status::PayloadTooLarge)
         .with_content("Could not understand the given data.")
         .with_content_type(ContentType::Text)
@@ -17,6 +16,8 @@ pub fn root_403() -> String {
 }
 
 #[rocket::catch(404)]
-pub async fn root_404(req: &rocket::Request<'_>) -> Redirect {
-    Redirect::to(rocket::uri!("/404"))
+pub async fn root_404(req: &rocket::Request<'_>) -> super::response::Response {
+    use crate::server::response::Response;
+    // Redirect::to(rocket::uri!("/404"))
+    Response::redirect("/404")
 }

@@ -1,5 +1,3 @@
-use yew::html;
-
 pub struct About;
 
 impl yew::Component for About {
@@ -12,6 +10,8 @@ impl yew::Component for About {
     }
 
     fn view(&self, _ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
+        use yew::html;
+
         html! {<>
             <div class="about">
                 <h1>{"About Me"}</h1>

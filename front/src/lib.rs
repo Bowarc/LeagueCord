@@ -1,12 +1,9 @@
-use yew::{html, Context, Html};
-use yew_router::{BrowserRouter, Routable, Switch};
-
-mod scene;
-mod component;
 mod apps;
+mod component;
+mod scene;
 mod utils;
 
-#[derive(Debug, Clone, Copy, PartialEq, Routable)]
+#[derive(Debug, Clone, Copy, PartialEq, yew_router::Routable)]
 enum Route {
     #[at("/")]
     Home,
@@ -14,8 +11,8 @@ enum Route {
     #[at("/404")]
     NotFound,
     #[at("/group/:id")]
-    Group{id: u64}
-}    
+    Group { id: u64 },
+}
 pub struct App;
 
 impl yew::Component for App {
@@ -23,12 +20,17 @@ impl yew::Component for App {
 
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &yew::Context<Self>) -> Self {
         Self
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> yew::prelude::Html {
-        html!{
+    fn view(&self, _ctx: &yew::Context<Self>) -> yew::prelude::Html {
+        use {
+            yew::html,
+            yew_router::{BrowserRouter, Switch},
+        };
+
+        html! {
             <BrowserRouter>
                 <Switch<Route> render={switch} />
             </BrowserRouter>
@@ -36,13 +38,15 @@ impl yew::Component for App {
     }
 }
 
-fn switch(routes: Route) -> Html {
+fn switch(routes: Route) -> yew::Html {
+    use yew::html;
+
     match routes {
         Route::Home => {
             let group_id = None;
             html! { <apps::HomeApp {group_id} /> }
-        },
-        Route::Group { id: group_id } => html!{
+        }
+        Route::Group { id: group_id } => html! {
             html! { <apps::HomeApp {group_id} /> }
         },
         Route::NotFound => html! { <h1>{ "404" }</h1> },

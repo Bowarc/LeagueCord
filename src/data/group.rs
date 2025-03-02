@@ -1,29 +1,17 @@
-use serenity::all::CacheHttp;
-
-use {
-    super::id_cache::IdCache,
-    serenity::all::{
-        ChannelId, ChannelType, Context, CreateChannel, CreateInvite, EditRole,
-        PermissionOverwrite, PermissionOverwriteType, Permissions, RoleId, UserId,
-    },
-    std::time::Instant,
-    tokio::task::JoinSet,
-};
-
 pub type GroupId = u64;
 
 #[derive(Debug)]
 pub struct Group {
     pub id: GroupId,
 
-    pub creation_time: Instant,
+    pub creation_time: std::time::Instant,
     pub invite_code: String,
-    pub text_channel: ChannelId,
-    pub voice_channel: ChannelId,
-    pub category: ChannelId,
-    pub role: RoleId,
+    pub text_channel: serenity::all::ChannelId,
+    pub voice_channel: serenity::all::ChannelId,
+    pub category: serenity::all::ChannelId,
+    pub role: serenity::all::RoleId,
 
-    pub users: Vec<UserId>,
+    pub users: Vec<serenity::all::UserId>,
 }
 
 impl Group {
@@ -38,7 +26,18 @@ impl Group {
         name[1..].parse::<GroupId>().ok()
     }
 
-    pub async fn create_new(http: impl CacheHttp, ids: &IdCache) -> Result<Self, String> {
+    pub async fn create_new(
+        http: impl serenity::all::CacheHttp,
+        ids: &super::IdCache,
+    ) -> Result<Self, String> {
+        use {
+            serenity::all::{
+                ChannelType, CreateChannel, CreateInvite, EditRole, PermissionOverwrite,
+                PermissionOverwriteType, Permissions,
+            },
+            std::time::Instant,
+        };
+
         let http = http.http();
         let group_id = random::get(0, u64::MAX);
 
@@ -139,7 +138,9 @@ impl Group {
         })
     }
 
-    pub async fn cleanup_for_deletion(&self, ctx: Context, ids: &IdCache) {
+    pub async fn cleanup_for_deletion(&self, ctx: serenity::all::Context, ids: &super::IdCache) {
+        use tokio::task::JoinSet;
+
         // The invitation is automatically deleted when removing the associated channel
 
         // kick users

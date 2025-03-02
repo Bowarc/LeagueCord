@@ -48,6 +48,7 @@ pub async fn static_resource(
     file: &str,
     remote_addr: std::net::SocketAddr,
 ) -> super::response::Response {
+    use super::response::Response;
     use rocket::http::Status;
 
     #[rustfmt::skip]
@@ -56,9 +57,7 @@ pub async fn static_resource(
     ];
 
     if !ALLOWED_FILES.contains(&file) {
-        return super::response::ResponseBuilder::default()
-            .with_status(Status::NotFound)
-            .build();
+        return Response::builder().with_status(Status::NotFound).build();
     }
 
     serve_static("/resources", file, remote_addr).await
@@ -69,6 +68,7 @@ pub async fn static_css(
     file: &str,
     remote_addr: std::net::SocketAddr,
 ) -> super::response::Response {
+    use crate::server::response::Response;
     use rocket::http::Status;
 
     const ALLOWED_FILES: &[&str] = &[
@@ -80,9 +80,7 @@ pub async fn static_css(
     ];
 
     if !ALLOWED_FILES.contains(&file) {
-        return super::response::ResponseBuilder::default()
-            .with_status(Status::NotFound)
-            .build();
+        return Response::builder().with_status(Status::NotFound).build();
     }
 
     serve_static("/css", file, remote_addr).await
@@ -123,6 +121,7 @@ async fn static_file_response(
     content_type: rocket::http::ContentType,
     remote_addr: std::net::SocketAddr,
 ) -> super::response::Response {
+    use crate::server::response::Response;
     use rocket::http::Status;
     use tokio::io::AsyncReadExt as _;
 
@@ -142,13 +141,11 @@ async fn static_file_response(
 
     // here we could maybe use streaming
     match read_static(path, remote_addr).await {
-        Some(bytes) => super::response::ResponseBuilder::default()
+        Some(bytes) => Response::builder()
             .with_status(Status::Ok)
             .with_content(bytes)
             .with_content_type(content_type)
             .build(),
-        None => super::response::ResponseBuilder::default()
-            .with_status(Status::NotFound)
-            .build(),
+        None => Response::builder().with_status(Status::NotFound).build(),
     }
 }

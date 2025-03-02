@@ -1,15 +1,12 @@
-use data::LeagueCordData;
-
 #[macro_use(trace, debug, info, warn, error)]
 extern crate log;
 
 mod bot;
-mod server;
 mod data;
+mod server;
 
 fn setup_loggers() {
-    use log::LevelFilter;
-    use std::time::Duration;
+    use {log::LevelFilter, std::time::Duration};
 
     const DEP_FILTERS: &[(&str, LevelFilter)] = &[
         ("log_panics", LevelFilter::Trace),
@@ -54,16 +51,18 @@ fn setup_loggers() {
 
 #[rocket::main]
 async fn main() {
+    use data::LeagueCordData;
+
     setup_loggers();
 
     dotenv::dotenv().unwrap();
 
     let (http, data, _handle) = bot::run_threaded().await;
 
-    let lc_data = loop{
+    let lc_data = loop {
         let data_read = data.read().await;
-        let Some(lc_data) = data_read.get::<LeagueCordData>() else{
-            continue
+        let Some(lc_data) = data_read.get::<LeagueCordData>() else {
+            continue;
         };
         break lc_data.clone();
     };

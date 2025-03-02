@@ -1,17 +1,16 @@
-use std::{collections::HashMap, time::Instant};
-
-use serenity::all::CacheHttp;
-
-use super::{IdCache, InviteCode, InviteUseCount};
-
 #[derive(Debug)]
 pub struct InviteTracker {
-    storage: HashMap<InviteCode, InviteUseCount>,
-    last_update: Instant,
+    storage: std::collections::HashMap<super::InviteCode, super::InviteUseCount>,
+    last_update: std::time::Instant,
 }
 
 impl InviteTracker {
-    pub async fn new(http: impl CacheHttp, ids: &IdCache) -> Result<Self, String> {
+    pub async fn new(
+        http: impl serenity::all::CacheHttp,
+        ids: &super::IdCache,
+    ) -> Result<Self, String> {
+        use std::{collections::HashMap, time::Instant};
+
         let mut it = Self {
             storage: HashMap::default(),
             last_update: Instant::now(),
@@ -22,7 +21,13 @@ impl InviteTracker {
         Ok(it)
     }
 
-    pub async fn update(&mut self, http: impl CacheHttp, ids: &IdCache) -> Result<(), String> {
+    pub async fn update(
+        &mut self,
+        http: impl serenity::all::CacheHttp,
+        ids: &super::IdCache,
+    ) -> Result<(), String> {
+        use std::time::Instant;
+
         let Ok(invite_list) = http.http().get_guild_invites(ids.guild).await else {
             return Err(format!(
                 "Could not get the invite list for guild: {:?}",
@@ -39,8 +44,9 @@ impl InviteTracker {
 
         Ok(())
     }
+
     #[inline]
-    pub fn get(&self, code: &InviteCode) -> Option<&InviteUseCount>{
+    pub fn get(&self, code: &super::InviteCode) -> Option<&super::InviteUseCount> {
         self.storage.get(code)
     }
 }

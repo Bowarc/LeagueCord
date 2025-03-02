@@ -1,10 +1,7 @@
-use serenity::all::{ChannelId, GuildId, RoleId};
-
 #[derive(Debug)]
 pub struct IdCache {
-    pub guild: GuildId,
-    pub admin_role: RoleId,
-    pub graveyard_category: ChannelId,
-    pub bot_log_channel: ChannelId,
+    pub guild: serenity::all::GuildId,
+    pub admin_role: serenity::all::RoleId,
+    pub graveyard_category: serenity::all::ChannelId,
+    pub bot_log_channel: serenity::all::ChannelId,
 }
-

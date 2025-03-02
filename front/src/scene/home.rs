@@ -1,5 +1,3 @@
-use yew::html;
-
 pub struct Home;
 
 impl yew::Component for Home {
@@ -12,6 +10,8 @@ impl yew::Component for Home {
     }
 
     fn view(&self, _ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
+        use yew::html;
+
         html! {<>
             <div class="home">
                 <p class="home_main_title">{

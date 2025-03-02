@@ -1,10 +1,3 @@
-use yew::Properties;
-
-use {
-    js_sys::Date,
-    yew::{html, Context, Html},
-};
-
 use crate::component;
 use crate::scene;
 use crate::utils;
@@ -25,7 +18,7 @@ pub struct HomeApp {
     current_scene: Scene,
 }
 
-#[derive(Debug, PartialEq, Properties)]
+#[derive(Debug, PartialEq, yew::Properties)]
 pub struct Props {
     pub group_id: Option<u64>,
 }
@@ -34,19 +27,17 @@ impl yew::Component for HomeApp {
     type Message = Message;
     type Properties = Props;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(ctx: &yew::Context<Self>) -> Self {
         let current_scene = if let Some(group_id) = ctx.props().group_id {
             Scene::Group { group_id }
         } else {
             Scene::Home
         };
 
-        Self {
-            current_scene
-        }
+        Self { current_scene }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::SwitchScene(scene) => {
                 self.current_scene = scene;
@@ -55,7 +46,9 @@ impl yew::Component for HomeApp {
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
+        use {js_sys::Date, yew::html};
+
         let scenes = if let Some(group_id) = ctx.props().group_id {
             vec![
                 Scene::Home,
@@ -98,11 +91,13 @@ impl yew::Component for HomeApp {
 
 impl Scene {
     fn html(&self) -> yew::virtual_dom::VNode {
+        use yew::html;
+
         match self {
             Scene::Home => {
                 html! {<><scene::Home /></>}
             }
-            Scene::Group { group_id } => html!{<>
+            Scene::Group { group_id } => html! {<>
                 <scene::Group {group_id}/>
             </>},
             Scene::About => html! {<><scene::About /></>},

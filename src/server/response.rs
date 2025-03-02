@@ -33,6 +33,16 @@ pub struct Response {
 }
 
 impl Response {
+    pub fn builder() -> ResponseBuilder {
+        ResponseBuilder::default()
+    }
+
+    pub fn redirect(to: &str) -> Self {
+        ResponseBuilder::default()
+            .with_header("Location", to)
+            .build()
+    }
+
     pub fn status(&self) -> &rocket::http::Status {
         &self.status
     }

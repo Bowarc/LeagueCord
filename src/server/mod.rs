@@ -1,28 +1,27 @@
-use std::sync::Arc;
-
-use serenity::all::Http;
-
-use crate::data::{LeagueCordData, GroupCreationSpamTracker};
-
 pub mod catchers;
 pub mod error;
 pub mod response;
 pub mod routes;
 
 #[rocket::get("/404")]
-async fn notfound(remote_addr: std::net::SocketAddr) -> response::Response{
+async fn notfound(remote_addr: std::net::SocketAddr) -> response::Response {
     routes::root(remote_addr).await
 }
 
 pub async fn build_rocket(
-    http: Arc<Http>,
-    data: LeagueCordData,
+    http: std::sync::Arc<serenity::all::Http>,
+    data: crate::data::LeagueCordData,
 ) -> rocket::Rocket<rocket::Ignite> {
+    use crate::data::GroupCreationSpamTracker;
+
     rocket::build()
         .manage(http)
         .manage(data)
         .manage(GroupCreationSpamTracker::default())
-        .register("/", rocket::catchers![catchers::root_403, catchers::root_404])
+        .register(
+            "/",
+            rocket::catchers![catchers::root_403, catchers::root_404],
+        )
         .mount(
             "/",
             rocket::routes![

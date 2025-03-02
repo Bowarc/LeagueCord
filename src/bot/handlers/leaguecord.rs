@@ -1,23 +1,19 @@
-use crate::data::InviteTracker;
-
-use {
-    crate::data::{IdCache, LeagueCordData},
-    serenity::all::{Context, EventHandler, Message},
-    serenity::all::{
-        CreateChannel, CreateCommand, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
-        CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, GuildId,
-        Interaction, Member, Mentionable, User,
-    },
-    std::sync::Arc,
-    std::time::Duration,
-    tokio::sync::RwLock,
-};
-
 pub struct LeagueCord;
 
 #[serenity::async_trait]
-impl EventHandler for LeagueCord {
-    async fn ready(&self, ctx: Context, data_about_bot: serenity::model::prelude::Ready) {
+impl serenity::all::EventHandler for LeagueCord {
+    async fn ready(
+        &self,
+        ctx: serenity::all::Context,
+        data_about_bot: serenity::model::prelude::Ready,
+    ) {
+        use {
+            crate::data::{IdCache, InviteTracker, LeagueCordData},
+            serenity::all::{CreateChannel, CreateCommand},
+            std::sync::Arc,
+            tokio::sync::RwLock,
+        };
+
         // if data_about_bot.guilds.len() != 1 {
         //     error!("Expected to live in only one server");
         //     std::process::exit(1);
@@ -115,9 +111,15 @@ impl EventHandler for LeagueCord {
 
     async fn guild_member_addition(
         &self,
-        ctx: Context,
+        ctx: serenity::all::Context,
         new_member: serenity::model::prelude::Member,
     ) {
+        use {
+            crate::data::LeagueCordData,
+            serenity::all::{CreateMessage, Mentionable as _},
+            std::time::Duration,
+        };
+
         // Get a read ref of the data
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
@@ -163,7 +165,10 @@ impl EventHandler for LeagueCord {
                 .iter_mut()
                 .find(|group| group.invite_code == invite.code)
             else {
-                warn!("User {} tried to join with an invite that did not correspond to any group.", new_member.user.name);
+                warn!(
+                    "User {} tried to join with an invite that did not correspond to any group.",
+                    new_member.user.name
+                );
                 if let Err(e) = new_member
                     .kick_with_reason(ctx.http.clone(), "Not appart of a valid group")
                     .await
@@ -297,11 +302,12 @@ impl EventHandler for LeagueCord {
 
     async fn guild_member_removal(
         &self,
-        ctx: Context,
-        _guild_id: GuildId,
-        user: User,
-        _member_data_if_available: Option<Member>,
+        ctx: serenity::all::Context,
+        _guild_id: serenity::all::GuildId,
+        user: serenity::all::User,
+        _member_data_if_available: Option<serenity::all::Member>,
     ) {
+        use crate::data::LeagueCordData;
         // Get a read ref of the data
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
@@ -335,7 +341,7 @@ impl EventHandler for LeagueCord {
         }
     }
 
-    async fn message(&self, ctx: Context, message: Message) {
+    async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
         use crate::bot::command;
         'help: {
             let Some(_args) = command::parse(
@@ -355,7 +361,12 @@ impl EventHandler for LeagueCord {
 
         // debug!("Message: {message:?}")
     }
-    async fn interaction_create(&self, ctx: Context, i: serenity::all::Interaction) {
+    async fn interaction_create(&self, ctx: serenity::all::Context, i: serenity::all::Interaction) {
+        use serenity::all::{
+            CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
+            CreateInteractionResponseMessage, Interaction,
+        };
+
         let Interaction::Command(c) = i else {
             return;
         };
