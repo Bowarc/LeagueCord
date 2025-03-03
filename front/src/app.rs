@@ -1,33 +1,23 @@
-use crate::component;
-use crate::scene;
-use crate::utils;
-
 pub enum Message {
-    SwitchScene(Scene),
+    SwitchScene(crate::scene::Scene),
 }
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum Scene {
-    Home,
-    About,
-    Contact,
-    Group { group_id: u64 },
-}
-
-pub struct HomeApp {
-    current_scene: Scene,
+pub struct App {
+    current_scene: crate::scene::Scene,
 }
 
 #[derive(Debug, PartialEq, yew::Properties)]
 pub struct Props {
     pub group_id: Option<u64>,
+    pub scenes: Vec<crate::scene::Scene>,
 }
 
-impl yew::Component for HomeApp {
+impl yew::Component for App {
     type Message = Message;
     type Properties = Props;
 
     fn create(ctx: &yew::Context<Self>) -> Self {
+        use crate::scene::Scene;
         let current_scene = if let Some(group_id) = ctx.props().group_id {
             Scene::Group { group_id }
         } else {
@@ -47,7 +37,11 @@ impl yew::Component for HomeApp {
     }
 
     fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
-        use {js_sys::Date, yew::html};
+        use {
+            crate::{component::NotificationManager, scene::Scene},
+            js_sys::Date,
+            yew::html,
+        };
 
         let scenes = if let Some(group_id) = ctx.props().group_id {
             vec![
@@ -79,40 +73,12 @@ impl yew::Component for HomeApp {
                 {
                     self.current_scene.html()
                 }
-                <component::NotificationManager />
+                <NotificationManager />
             </div>
             <footer>
                 { format!("Rendered: {}", String::from(Date::new_0().to_string())) }
             </footer>
             </div>
-        }
-    }
-}
-
-impl Scene {
-    fn html(&self) -> yew::virtual_dom::VNode {
-        use yew::html;
-
-        match self {
-            Scene::Home => {
-                html! {<><scene::Home /></>}
-            }
-            Scene::Group { group_id } => html! {<>
-                <scene::Group {group_id}/>
-            </>},
-            Scene::About => html! {<><scene::About /></>},
-            Scene::Contact => html! {<><scene::Contact /></>},
-        }
-    }
-}
-
-impl std::fmt::Display for Scene {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Scene::Home => write!(f, "Home"),
-            Scene::Group { .. } => write!(f, "Group"),
-            Scene::About => write!(f, "About"),
-            Scene::Contact => write!(f, "Contact"),
         }
     }
 }

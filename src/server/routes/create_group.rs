@@ -14,24 +14,19 @@ pub async fn create_group(
     spam_tracker.update().await;
 
     if let Some(group_id) = spam_tracker.has(remote_addr.ip()).await {
-        if let Some(group) = lc_data
-            .groups
-            .read()
-            .await
-            .iter()
-            .find(|group| group.id == group_id)
-        {
+        if lc_data.groups.read().await.iter().any(|g| g.id == group_id) {
             return Response::builder()
-                .with_content(format!("http://discord.gg/{}\n", group.invite_code))
+                .with_content(group_id.to_string())
                 .build();
         }
+
         warn!("Fail to short-circuit group creation due to: Could not find a group with id: {group_id}");
+        spam_tracker.remove(remote_addr.ip()).await;
     }
 
     match Group::create_new(http.http(), ids).await {
         Ok(group) => {
-            let invite_code = group.invite_code.clone();
-            debug!("Created group '{}' (asked by {remote_addr})", invite_code);
+            let group_id = group.id;
 
             spam_tracker.register(remote_addr.ip(), group.id).await;
 
@@ -46,7 +41,7 @@ pub async fn create_group(
             lc_data.groups.write().await.push(group);
 
             Response::builder()
-                .with_content(format!("http://discord.gg/{}\n", invite_code))
+                .with_content(group_id.to_string())
                 .build()
         }
         Err(e) => {

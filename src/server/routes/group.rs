@@ -1,12 +1,15 @@
+use rocket::response::Redirect;
+
 #[rocket::get("/group/<id>")]
 pub async fn group(
     id: crate::data::GroupId,
     remote_addr: std::net::SocketAddr,
 ) -> super::super::response::Response {
     use super::super::response::Response;
+    use super::root;
 
-    Response::redirect("/")
-    // root(remote_addr).await
+    // Response::redirect("/")
+    root(remote_addr).await
 }
 
 #[rocket::get("/group_data/<id>")]

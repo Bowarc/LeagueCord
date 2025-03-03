@@ -50,4 +50,8 @@ impl GroupCreationSpamTracker {
             warn!("Registering a new group in the SpamTracker returned an old value: {old:?}");
         }
     }
+
+    pub async fn remove(&self, ip: std::net::IpAddr) {
+        self.0.write().await.remove(&ip);
+    }
 }

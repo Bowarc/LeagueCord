@@ -1,3 +1,5 @@
+use rocket::response::Redirect;
+
 pub enum ResponseContent {
     Sized(Vec<u8>),
     Stream(Box<dyn std::io::Read + Send>),
@@ -38,8 +40,11 @@ impl Response {
     }
 
     pub fn redirect(to: &str) -> Self {
+        use rocket::http::Status;
+
         ResponseBuilder::default()
             .with_header("Location", to)
+            .with_status(Status::SeeOther)
             .build()
     }
 
