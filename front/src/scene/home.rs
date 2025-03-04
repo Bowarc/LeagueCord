@@ -1,4 +1,6 @@
-pub struct Home;
+pub struct Home {
+    group_creation_requested: bool,
+}
 
 pub enum Message {
     CreateGroup,
@@ -8,16 +10,18 @@ pub enum Message {
 
 #[derive(Debug, PartialEq, yew::Properties)]
 pub struct Props {
-    // scene_switch: yew::Callback<crate::scene::>
+    pub scene_switch: yew::Callback<crate::scene::Scene>,
 }
 
 impl yew::Component for Home {
     type Message = Message;
 
-    type Properties = ();
+    type Properties = Props;
 
     fn create(_ctx: &yew::prelude::Context<Self>) -> Self {
-        Self
+        Self {
+           group_creation_requested: false,
+        }
     }
 
     fn update(&mut self, ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
@@ -31,9 +35,9 @@ impl yew::Component for Home {
                     web_sys::{window, Request, Response},
                 };
 
-                ctx.link().send_future(async move {
-                    log!("hi");
+                self.group_creation_requested = true;
 
+                ctx.link().send_future(async move {
                     let request = match Request::new_with_str("/create_group") {
                         Ok(request) => request,
                         Err(e) => panic!("Failed to create group data request due to: {e:?}"),
@@ -86,14 +90,11 @@ impl yew::Component for Home {
 
                     log!(format!("Created group id: {group_id:?}"));
 
-                    // Message::DataReceived(group_data)
-
                     Message::GroupCreated(group_id)
                 });
                 true
             }
             Message::GroupCreated(id) => {
-                use web_sys::window;
                 use yew_router::prelude::RouterScopeExt as _;
 
                 let Some(nav) = ctx.link().navigator() else {
@@ -101,29 +102,26 @@ impl yew::Component for Home {
                 };
 
                 nav.replace(&crate::Route::Group { id });
-
-                // window().unwrap().location().reload().unwrap();
+                ctx.props()
+                    .scene_switch
+                    .emit(crate::scene::Scene::Group { group_id: id });
 
                 true
             }
-            _ => true,
+            Message::GroupCreateError(_e) => {
+                // TODO: Error path
+                todo!()
+            }
         }
     }
 
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
-        use {
-            // yew_router::hooks::use_navigator,
-            gloo::console::log,
-            yew::html,
-            yew_router::prelude::*,
-        };
-
-        let nav_opt = ctx.link().navigator().unwrap();
-        log!(format!("{nav_opt:?}"));
+        use yew::html;
+        // let nav_opt = ctx.link().navigator().unwrap();
+        // log!(navigator.is_some());
 
         let create_group = ctx.link().callback(|_| Message::CreateGroup);
 
-        // log!(navigator.is_some());
         html! {<>
             <div class="home">
                 <p class="home_main_title">{
@@ -134,9 +132,15 @@ impl yew::Component for Home {
                     <h2 class="home_section_title">{
                         "Welcome"
                     }</h2>
-                    <p class="home_section_text">
-                        <button onclick={create_group}>{"Create a group"}</button>
-                    </p>
+                    <p class="home_section_text">{
+                        if !self.group_creation_requested{
+                            html!{<button onclick={create_group}>{"Create a group"}</button>}
+                        }else{
+                            let texts = vec!["Loading", "Loading . ", "Loading . .", "Loading . . ."];
+                            let delay_ms = 333;
+                            html!{<crate::component::ChangingText {texts} {delay_ms} />}
+                        }
+                    }</p>
                 </section>
             </div>
         </>}

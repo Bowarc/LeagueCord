@@ -47,7 +47,8 @@ impl GroupCreationSpamTracker {
         use std::time::Instant;
 
         if let Some(old) = self.0.write().await.insert(ip, (Instant::now(), group_id)) {
-            warn!("Registering a new group in the SpamTracker returned an old value: {old:?}");
+            // warn!("Registering a new group in the SpamTracker returned an old value: {old:?}");
+            warn!("SpamTracker registered a new group, but this ip already had a recent one: {old:?}");
         }
     }
 

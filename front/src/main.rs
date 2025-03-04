@@ -2,6 +2,7 @@ mod app;
 mod component;
 mod scene;
 mod utils;
+mod time;
 
 #[derive(Debug, Clone, Copy, PartialEq, yew_router::Routable)]
 pub enum Route {
@@ -17,6 +18,7 @@ pub enum Route {
 #[yew::function_component]
 fn Router() -> yew::Html {
     use {
+        scene::Scene,
         yew::html,
         yew_router::{BrowserRouter, Switch},
     };
@@ -27,13 +29,24 @@ fn Router() -> yew::Html {
                 |route: Route|
                 match route {
                     Route::Home => {
-                        let group_id = None;
-                        let scenes = Vec::new();
-                        html! { <app::App {group_id} {scenes} /> }
+                        let scenes = vec![
+                            Scene::Home,
+                            Scene::About,
+                            Scene::Contact
+                        ];
+                        let default_scene_index = 0;
+                        
+                        html! { <app::App {scenes} {default_scene_index} /> }
                     }
                     Route::Group { id: group_id } => {
-                        let scenes = Vec::new();
-                        html! { <app::App {group_id} {scenes} /> }
+                        let scenes = vec![
+                            Scene::Home,
+                            Scene::Group{ group_id },
+                            Scene::About,
+                            Scene::Contact
+                        ];
+                        let default_scene_index = 1;
+                        html! { <app::App {scenes} {default_scene_index} /> }
                     }
                     Route::NotFound => html! { <h1>{ "404" }</h1> },
                 }

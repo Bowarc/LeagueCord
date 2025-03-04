@@ -14,6 +14,7 @@ pub enum DataFetchState {
 }
 
 pub enum Message {
+    Redraw,
     DataReceived(shared::GroupData),
     DataFetchError(wasm_bindgen::JsValue),
 }
@@ -92,10 +93,17 @@ impl yew::Component for Group {
         }
     }
 
-    fn update(&mut self, _ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Message::Redraw => true,
             Message::DataReceived(data) => {
+                use gloo::timers::callback::Interval;
+
                 self.data_fetch_state = DataFetchState::Received(data);
+
+                // set up an interval to redraw the window and update the timer
+                let callback = ctx.link().callback(|_: ()| Message::Redraw);
+                Interval::new(100, move || callback.emit(())).forget();
                 true
             }
             Message::DataFetchError(error) => {
@@ -106,13 +114,38 @@ impl yew::Component for Group {
     }
 
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
-        use yew::html;
+        use {
+            crate::time::format,
+            web_time::{Duration, SystemTime},
+            yew::html,
+        };
 
         let group_id = ctx.props().group_id;
 
         let body = match &self.data_fetch_state {
             DataFetchState::Pending => html! {<>{ "Fetching data . ."}</>},
-            DataFetchState::Received(group_data) => html! {<>{ format!("{group_data:?}")} </>},
+            DataFetchState::Received(group_data) => {
+                html! {<>
+                    { format!("Id: {}", group_data.id()) }
+                    <br />
+                    {
+                        format!(
+                            "Created {} ago",
+                            format(SystemTime::now()
+                                    .duration_since(SystemTime::UNIX_EPOCH +
+                                        Duration::from_secs(group_data.creation_time_s_since_epoch()))
+                                    .unwrap_or_else(|_| Duration::from_secs(0)),
+                                1,
+                            )
+                        )
+                    }
+                    <br />
+                    { format!("Member count: {}", group_data.user_count()) }
+                    <br />
+                    { format!("Join with: ") }
+                    <a href={format!("https://discord.gg/{}", group_data.invite_code())}> {"this link"}</a>
+                </>}
+            }
             DataFetchState::Failed(js_value) => html! {<>{format!("Error: {js_value:?}")}</>},
         };
 

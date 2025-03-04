@@ -4,7 +4,7 @@ pub type GroupId = u64;
 pub struct Group {
     pub id: GroupId,
 
-    pub creation_time: std::time::Instant,
+    pub creation_time: std::time::SystemTime,
     pub invite_code: String,
     pub text_channel: serenity::all::ChannelId,
     pub voice_channel: serenity::all::ChannelId,
@@ -35,7 +35,7 @@ impl Group {
                 ChannelType, CreateChannel, CreateInvite, EditRole, PermissionOverwrite,
                 PermissionOverwriteType, Permissions,
             },
-            std::time::Instant,
+            std::time::SystemTime,
         };
 
         let http = http.http();
@@ -127,7 +127,7 @@ impl Group {
 
         Ok(Self {
             id: group_id,
-            creation_time: Instant::now(),
+            creation_time: SystemTime::now(),
             invite_code: invite.code,
             text_channel: text_channel.id,
             voice_channel: voice_channel.id,
@@ -182,6 +182,11 @@ impl Group {
 
 impl Group {
     pub fn to_data(&self) -> shared::GroupData {
-        shared::GroupData::new(self.id, self.users.len() as u32, self.invite_code.clone())
+        shared::GroupData::new(
+            self.id,
+            self.creation_time,
+            self.users.len() as u32,
+            self.invite_code.clone(),
+        )
     }
 }

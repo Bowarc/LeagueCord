@@ -15,12 +15,13 @@ pub enum Scene {
 }
 
 impl Scene {
-    pub fn html(&self) -> yew::virtual_dom::VNode {
+    pub fn html(&self, ctx: &yew::Context<crate::app::App>) -> yew::virtual_dom::VNode {
         use yew::html;
 
         match self {
             Scene::Home => {
-                html! {<><Home /></>}
+                let scene_switch = ctx.link().callback(crate::app::Message::SwitchScene);
+                html! {<><Home {scene_switch}/></>}
             }
             Scene::Group { group_id } => html! {<>
                 <Group {group_id}/>

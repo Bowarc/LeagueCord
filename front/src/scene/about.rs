@@ -14,7 +14,7 @@ impl yew::Component for About {
 
         html! {<>
             <div class="about">
-                <h1>{"About Me"}</h1>
+                <h1>{"About"}</h1>
                 <p> { "TODO" }</p>
             </div>
         </>}

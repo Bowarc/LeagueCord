@@ -8,8 +8,8 @@ pub struct App {
 
 #[derive(Debug, PartialEq, yew::Properties)]
 pub struct Props {
-    pub group_id: Option<u64>,
     pub scenes: Vec<crate::scene::Scene>,
+    pub default_scene_index: usize,
 }
 
 impl yew::Component for App {
@@ -17,12 +17,11 @@ impl yew::Component for App {
     type Properties = Props;
 
     fn create(ctx: &yew::Context<Self>) -> Self {
-        use crate::scene::Scene;
-        let current_scene = if let Some(group_id) = ctx.props().group_id {
-            Scene::Group { group_id }
-        } else {
-            Scene::Home
-        };
+        let scenes = &ctx.props().scenes;
+        let current_scene = *scenes
+            .get(ctx.props().default_scene_index)
+            .or_else(|| scenes.first())
+            .unwrap();
 
         Self { current_scene }
     }
@@ -37,22 +36,10 @@ impl yew::Component for App {
     }
 
     fn view(&self, ctx: &yew::Context<Self>) -> yew::Html {
-        use {
-            crate::{component::NotificationManager, scene::Scene},
-            js_sys::Date,
-            yew::html,
-        };
+        use {crate::component::NotificationManager, js_sys::Date, yew::html};
 
-        let scenes = if let Some(group_id) = ctx.props().group_id {
-            vec![
-                Scene::Home,
-                Scene::Group { group_id },
-                Scene::About,
-                Scene::Contact,
-            ]
-        } else {
-            vec![Scene::Home, Scene::About, Scene::Contact]
-        };
+        let scenes = ctx.props().scenes.clone();
+
         html! {
             <div id="global">
             <div id="header">
@@ -62,7 +49,7 @@ impl yew::Component for App {
                 <div id="scene_list" class="header_item">{
                     scenes.into_iter().map(|scene|{
                         html!{
-                            <button class={format!("scene_button{}", if self.current_scene == scene {" current"} else{""})} onclick={ctx.link().callback(move |_| Message::SwitchScene(scene))}>
+                            <button class={format!("scene_button{}", if self.current_scene == scene {" current"} else {""})} onclick={ctx.link().callback(move |_| Message::SwitchScene(scene))}>
                                 { format!("{scene}") }
                             </button>
                         }
@@ -71,7 +58,7 @@ impl yew::Component for App {
             </div>
             <div id="content">
                 {
-                    self.current_scene.html()
+                    self.current_scene.html(ctx)
                 }
                 <NotificationManager />
             </div>

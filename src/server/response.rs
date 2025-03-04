@@ -1,5 +1,3 @@
-use rocket::response::Redirect;
-
 pub enum ResponseContent {
     Sized(Vec<u8>),
     Stream(Box<dyn std::io::Read + Send>),
