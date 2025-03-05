@@ -208,8 +208,8 @@ impl serenity::all::EventHandler for LeagueCord {
             let group_text_channel_id = group.text_channel;
             let http = ctx.http.clone();
 
-            tokio::task::spawn(async move {
-                tokio::time::sleep(Duration::from_secs(5)).await;
+            // tokio::task::spawn(async move {
+            //     tokio::time::sleep(Duration::from_secs(5)).await;
                 if let Err(e) = group_text_channel_id
                     .send_message(
                         http,
@@ -219,7 +219,7 @@ impl serenity::all::EventHandler for LeagueCord {
                 {
                     error!("Failed to send welcome message due to: {e}");
                 }
-            });
+            // });
         }
         // Could not find what invite was used to join the server
         else if used_invites.is_empty() {
