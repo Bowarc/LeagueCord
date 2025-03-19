@@ -117,7 +117,6 @@ impl serenity::all::EventHandler for LeagueCord {
         use {
             crate::data::LeagueCordData,
             serenity::all::{CreateMessage, Mentionable as _},
-            std::time::Duration,
         };
 
         // Get a read ref of the data

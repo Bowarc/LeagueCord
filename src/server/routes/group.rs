@@ -1,12 +1,18 @@
+#![allow(clippy::crate_in_macro_def)]
+
 #[rocket::get("/group/<id>")]
 pub async fn group(
     id: crate::data::GroupId,
     remote_addr: std::net::SocketAddr,
+    lc_data: &rocket::State<crate::data::LeagueCordData>,
 ) -> super::super::response::Response {
-    // use super::super::response::Response;
+    use super::super::response::Response;
     use super::root;
 
-    // Response::redirect("/")
+    if !lc_data.groups.read().await.iter().any(|group| group.id == id){
+        return Response::redirect("/group_not_found");
+    }
+
     root(remote_addr).await
 }
 
@@ -36,6 +42,6 @@ pub async fn group_data(
 
     Response::builder()
         .with_content(object)
-        // .with_header("Cache-Control", "max-age=60") // Ask the browser to cache the request for 60 seconds, might help for server load
+        .with_header("Cache-Control", "max-age=30") // Ask the browser to cache the request for 30 seconds, might help for server load
         .build()
 }

@@ -13,6 +13,8 @@ pub enum Route {
     NotFound,
     #[at("/group/:id")]
     Group { id: u64 },
+    #[at("/group_not_found")]
+    GroupNotFound,
 }
 
 #[yew::function_component]
@@ -48,6 +50,17 @@ fn Router() -> yew::Html {
                         let default_scene_index = 1;
                         html! { <app::App {scenes} {default_scene_index} /> }
                     }
+                    Route::GroupNotFound => {
+                        let scenes = vec![
+                            Scene::Home,
+                            Scene::GroupNotFound,
+                            Scene::About,
+                            Scene::Contact
+                        ];
+                        let default_scene_index = 1;
+                        html! { <app::App {scenes} {default_scene_index} /> }
+                    }
+
                     Route::NotFound => html! { <h1>{ "404" }</h1> },
                 }
             } />

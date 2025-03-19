@@ -2,9 +2,12 @@
 mod create_group_route;
 #[path = "routes/group.rs"]
 mod group_route;
+#[path = "routes/group_not_found.rs"]
+mod group_not_found_route;
 
 pub use create_group_route::create_group;
 pub use group_route::{group, group_data};
+pub use group_not_found_route::group_not_found;
 
 #[rocket::get("/")]
 pub async fn root(remote_addr: std::net::SocketAddr) -> super::response::Response {
@@ -149,3 +152,4 @@ async fn static_file_response(
         None => Response::builder().with_status(Status::NotFound).build(),
     }
 }
+        

@@ -30,6 +30,7 @@ pub async fn build_rocket(
                 routes::create_group,
                 routes::group,
                 routes::group_data,
+                routes::group_not_found,
                 routes::front_js,
                 routes::front_bg_wasm,
                 routes::index_html,
