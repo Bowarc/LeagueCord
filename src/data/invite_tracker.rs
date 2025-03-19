@@ -49,4 +49,18 @@ impl InviteTracker {
     pub fn get(&self, code: &super::InviteCode) -> Option<&super::InviteUseCount> {
         self.storage.get(code)
     }
+
+    pub fn set(&mut self, code: super::InviteCode, uc: super::InviteUseCount){
+        use std::time::Instant;
+
+        self.storage.insert(code, uc);
+        self.last_update = Instant::now();
+    }
+
+    pub fn rm (&mut self, code: &super::InviteCode) {
+        use std::time::Instant;
+
+        self.storage.remove(code); // don't really care about errors
+        self.last_update = Instant::now()
+    }
 }

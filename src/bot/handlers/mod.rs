@@ -2,13 +2,18 @@
 mod debug;
 mod leaguecord;
 // mod logger;
+mod player_helper;
 mod purge;
+mod door;
+
 
 // pub use basic::Basic;
 pub use debug::Debug;
 pub use leaguecord::LeagueCord;
 // pub use logger::Logger;
+pub use player_helper::PlayerHelper;
 pub use purge::Purge;
+pub use door::Door;
 
 use crate::data::IdCache;
 
@@ -24,4 +29,26 @@ pub async fn log_error(ctx: serenity::all::Context, ids: &IdCache, message: &str
     {
         error!("Failed to send error message to log channel due to: {e}")
     }
+}
+
+pub async fn module_command(
+    ctx: &serenity::all::Context,
+    module_name: &str,
+    message: serenity::all::Message,
+) {
+    use crate::bot::command;
+    let Some(_args) = command::parse(
+        &message,
+        "modules",
+        command::Case::Insensitive,
+        command::Prefix::Yes,
+    ) else {
+        return;
+    };
+
+    message
+        .channel_id
+        .say(ctx.http.clone(), format!("{module_name} module is loaded !"))
+        .await
+        .unwrap();
 }

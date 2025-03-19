@@ -5,6 +5,8 @@ impl serenity::all::EventHandler for Debug {
     async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
         use crate::data::LeagueCordData;
 
+        super::module_command(&ctx, "Debug", message.clone()).await;
+        
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
         let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
@@ -20,12 +22,13 @@ impl serenity::all::EventHandler for Debug {
         {
             return;
         }
-        create_group(ctx.clone(), &message).await;
-        cleanup(ctx, &message).await
+
+        create_group(&ctx, &message).await;
+        cleanup(&ctx, &message).await;
     }
 }
 
-async fn create_group(ctx: serenity::all::Context, message: &serenity::all::Message) {
+async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Message) {
     use crate::{
         bot::command,
         data::{Group, LeagueCordData},
@@ -58,10 +61,10 @@ async fn create_group(ctx: serenity::all::Context, message: &serenity::all::Mess
         .await
         .unwrap();
 
-    let _ = message.reply(ctx.http, format!("discord.gg/{code}")).await;
+    let _ = message.reply(ctx.http.clone(), format!("discord.gg/{code}")).await;
 }
 
-async fn cleanup(ctx: serenity::all::Context, message: &serenity::all::Message) {
+async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message) {
     use {
         crate::{bot::command, data::LeagueCordData},
         serenity::all::EditChannel,
@@ -85,8 +88,10 @@ async fn cleanup(ctx: serenity::all::Context, message: &serenity::all::Message) 
 
     // Groups
     {
+        let mut invite_tracker = data.invites.write().await;
         for group in data.groups.read().await.iter() {
-            group.cleanup_for_deletion(ctx.clone(), &data.ids).await
+            group.cleanup_for_deletion(ctx.clone(), &data.ids).await;
+            invite_tracker.rm(&group.invite_code);
         }
     }
 

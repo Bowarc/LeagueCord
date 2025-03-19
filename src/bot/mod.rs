@@ -20,6 +20,8 @@ pub async fn run_threaded(// dispatcher_sender: Option<std::sync::mpsc::Sender<(
         // .event_handler(handlers::Basic)
         // .event_handler(handlers::Logger)
         .event_handler(handlers::LeagueCord)
+        .event_handler(handlers::PlayerHelper)
+        .event_handler(handlers::Door)
         .event_handler(handlers::Debug)
         .application_id(ApplicationId::new(1338410037953040466))
         .event_handler(handlers::Purge)

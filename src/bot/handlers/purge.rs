@@ -7,6 +7,7 @@ impl serenity::all::EventHandler for Purge {
             crate::bot::command,
             serenity::all::{Channel, GetMessages, MessageId},
         };
+        super::module_command(&ctx, "Purge", message.clone()).await;
 
         let Some(args) = command::parse(
             &message,
