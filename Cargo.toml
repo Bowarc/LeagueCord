@@ -1,36 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["front", "shared"]
-
-[package]
-name = "leaguecord"
-version = "0.1.0"
-edition = "2021"
-
-[[bin]]
-path = "src/main.rs"
-name = "leaguecord"
-
-[dependencies]
-shared = { path = "./shared" }
-logger = { git = "https://github.com/bowarc/crates", package = "logger", features = [
-  "panics",
-] }
-log = "0.4.20"
-random = { git = "https://github.com/bowarc/crates", package = "random" }
-tokio = { version = "1.43.0", features = ["rt-multi-thread"] }
-serenity = "0.12.4"
-rocket = { version = "0.5.1", features = [
-  "json",
-] } # I use the json feature to create a group object to send to front end
-thiserror = "2.0.11"
-dotenv = "0.15.0"
-tokio-util = { version = "0.7.13", default-features = false, features = [
-  "compat",
-] }
-futures = { version = "0.3.30", default-features = false, features = [
-  "async-await",
-] }
+members = ["front", "back", "shared"]
 
 [workspace.dependencies]
 serde_json = "1.0.138"

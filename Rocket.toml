@@ -4,7 +4,7 @@
 [default]
 ident = false
 # IP address to serve on.
-address = "192.168.1.39" # Local addr
+address = "127.0.0.1" # Local addr
 # Port to serve on.
 port = 0xa455
 # Number of threads to use for executing futures.
