@@ -1,8 +1,8 @@
 mod app;
 mod component;
 mod scene;
-mod utils;
 mod time;
+mod utils;
 
 #[derive(Debug, Clone, Copy, PartialEq, yew_router::Routable)]
 pub enum Route {
@@ -37,7 +37,7 @@ fn Router() -> yew::Html {
                             Scene::Contact
                         ];
                         let default_scene_index = 0;
-                        
+
                         html! { <app::App {scenes} {default_scene_index} /> }
                     }
                     Route::Group { id: group_id } => {

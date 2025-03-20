@@ -107,7 +107,10 @@ impl serenity::all::EventHandler for Door {
             if let Err(e) = group_text_channel_id
                 .send_message(
                     http,
-                    CreateMessage::new().content(format!("New player joined: {}\nMake sure to use `!help` if you have any question", new_member.mention())),
+                    CreateMessage::new().content(format!(
+                        "New player joined: {}\nMake sure to use `!help` if you have any question",
+                        new_member.mention()
+                    )),
                 )
                 .await
             {
@@ -158,7 +161,6 @@ impl serenity::all::EventHandler for Door {
                 .await
                 .unwrap();
         }
-
     }
 
     async fn guild_member_removal(

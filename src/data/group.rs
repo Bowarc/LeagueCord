@@ -1,3 +1,5 @@
+use serenity::all::Mentionable;
+
 pub type GroupId = u64;
 
 #[derive(Debug)]
@@ -32,10 +34,10 @@ impl Group {
     ) -> Result<Self, String> {
         use {
             serenity::all::{
-                ChannelType, CreateChannel, CreateInvite, EditRole, PermissionOverwrite,
-                PermissionOverwriteType, Permissions,
+                ChannelType, CreateChannel, CreateEmbed, CreateInvite, CreateMessage, EditRole,
+                PermissionOverwrite, PermissionOverwriteType, Permissions,
             },
-            std::time::SystemTime,
+            std::time::{SystemTime, UNIX_EPOCH},
         };
 
         let http = http.http();
@@ -67,33 +69,35 @@ impl Group {
             }
         };
 
-        let channel_base = CreateChannel::new(name).category(category.id).permissions({
-            let group_user_permissions = Permissions::VIEW_CHANNEL
-                | Permissions::CONNECT
-                | Permissions::SEND_MESSAGES
-                | Permissions::MANAGE_MESSAGES
-                | Permissions::READ_MESSAGE_HISTORY
-                | Permissions::ADD_REACTIONS
-                | Permissions::SPEAK
-                | Permissions::USE_VAD;
+        let channel_base = CreateChannel::new(name.clone())
+            .category(category.id)
+            .permissions({
+                let group_user_permissions = Permissions::VIEW_CHANNEL
+                    | Permissions::CONNECT
+                    | Permissions::SEND_MESSAGES
+                    | Permissions::MANAGE_MESSAGES
+                    | Permissions::READ_MESSAGE_HISTORY
+                    | Permissions::ADD_REACTIONS
+                    | Permissions::SPEAK
+                    | Permissions::USE_VAD;
 
-            vec![
-                // ADMIN
-                PermissionOverwrite {
-                    allow: group_user_permissions
-                        | Permissions::MANAGE_CHANNELS
-                        | Permissions::PRIORITY_SPEAKER,
-                    deny: Permissions::all(),
-                    kind: PermissionOverwriteType::Role(ids.admin_role),
-                },
-                // GROUP USER
-                PermissionOverwrite {
-                    allow: group_user_permissions,
-                    deny: Permissions::all(),
-                    kind: PermissionOverwriteType::Role(role.id),
-                },
-            ]
-        });
+                vec![
+                    // ADMIN
+                    PermissionOverwrite {
+                        allow: group_user_permissions
+                            | Permissions::MANAGE_CHANNELS
+                            | Permissions::PRIORITY_SPEAKER,
+                        deny: Permissions::all(),
+                        kind: PermissionOverwriteType::Role(ids.admin_role),
+                    },
+                    // GROUP USER
+                    PermissionOverwrite {
+                        allow: group_user_permissions,
+                        deny: Permissions::all(),
+                        kind: PermissionOverwriteType::Role(role.id),
+                    },
+                ]
+            });
 
         let (text_channel, voice_channel) = match futures::join!(
             guild.create_channel(http, channel_base.clone().kind(ChannelType::Text),),
@@ -102,7 +106,7 @@ impl Group {
             (Ok(text), Ok(voice)) => (text, voice),
             (Ok(c), Err(e)) | (Err(e), Ok(c)) => {
                 if let Err(e) = c.delete(http).await {
-                    error!("Failed to cleanup channel {c} due to: {e}");
+                    // error!("Failed to cleanup channel {c} due to: {e}");
                 }
                 return Err(e.to_string());
             }
@@ -122,6 +126,28 @@ impl Group {
             )
             .await
             .map_err(|e| e.to_string())?;
+
+        if let Err(e) = text_channel
+            .send_message(
+                http,
+                CreateMessage::new().embed(
+                    CreateEmbed::new()
+                        .color((36, 219, 144))
+                        .title("Group infos")
+                        .description(format!(
+                            "- Id: {group_id}\n- Role: {}\n- Join link: <http://192.168.1.39:42069/group/{group_id}>\n- Created <t:{}:R>",
+                            role.mention(),
+                            SystemTime::now()
+                                .duration_since(UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_secs(),
+                        )),
+                ),
+            )
+            .await
+        {
+            error!("Failed to send info embed in channel {group_id} due to: {e}");
+        }
 
         debug!("Created group {group_id}");
 

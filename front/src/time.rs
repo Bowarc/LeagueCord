@@ -1,4 +1,3 @@
-
 /// Shamelessly stolen from <https://github.com/bowarc/crates> (time)
 pub fn format(duration: web_time::Duration, mut prec: i8) -> String {
     const NANOS_IN_MICROSECOND: f64 = 1_000.0;

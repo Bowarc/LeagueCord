@@ -2,18 +2,17 @@
 mod debug;
 mod leaguecord;
 // mod logger;
+mod door;
 mod player_helper;
 mod purge;
-mod door;
-
 
 // pub use basic::Basic;
 pub use debug::Debug;
 pub use leaguecord::LeagueCord;
 // pub use logger::Logger;
+pub use door::Door;
 pub use player_helper::PlayerHelper;
 pub use purge::Purge;
-pub use door::Door;
 
 use crate::data::IdCache;
 
@@ -48,7 +47,10 @@ pub async fn module_command(
 
     message
         .channel_id
-        .say(ctx.http.clone(), format!("{module_name} module is loaded !"))
+        .say(
+            ctx.http.clone(),
+            format!("{module_name} module is loaded !"),
+        )
         .await
         .unwrap();
 }

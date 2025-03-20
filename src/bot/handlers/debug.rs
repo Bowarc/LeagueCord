@@ -6,7 +6,7 @@ impl serenity::all::EventHandler for Debug {
         use crate::data::LeagueCordData;
 
         super::module_command(&ctx, "Debug", message.clone()).await;
-        
+
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
         let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
@@ -61,7 +61,9 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
         .await
         .unwrap();
 
-    let _ = message.reply(ctx.http.clone(), format!("discord.gg/{code}")).await;
+    let _ = message
+        .reply(ctx.http.clone(), format!("discord.gg/{code}"))
+        .await;
 }
 
 async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message) {

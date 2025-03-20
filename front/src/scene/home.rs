@@ -20,7 +20,7 @@ impl yew::Component for Home {
 
     fn create(_ctx: &yew::prelude::Context<Self>) -> Self {
         Self {
-           group_creation_requested: false,
+            group_creation_requested: false,
         }
     }
 

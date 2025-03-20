@@ -109,11 +109,9 @@ impl serenity::all::EventHandler for LeagueCord {
         debug!("Bot is loaded")
     }
 
-
     async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
         super::module_command(&ctx, "LeagueCord(main)", message).await
 
         // debug!("Message: {message:?}")
     }
-    
 }

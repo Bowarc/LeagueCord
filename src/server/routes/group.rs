@@ -9,7 +9,13 @@ pub async fn group(
     use super::super::response::Response;
     use super::root;
 
-    if !lc_data.groups.read().await.iter().any(|group| group.id == id){
+    if !lc_data
+        .groups
+        .read()
+        .await
+        .iter()
+        .any(|group| group.id == id)
+    {
         return Response::redirect("/group_not_found");
     }
 
