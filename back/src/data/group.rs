@@ -135,7 +135,7 @@ impl Group {
                         .color((36, 219, 144))
                         .title("Group infos")
                         .description(format!(
-                            "- Id: {group_id}\n- Role: {}\n- Join link: <http://192.168.1.39:42069/group/{group_id}>\n- Created <t:{}:R>",
+                            "- Id: {group_id}\n- Role: {}\n- Join link: <https://groups.bowarc.ovh/group/{group_id}>\n- Created <t:{}:R>",
                             role.mention(),
                             SystemTime::now()
                                 .duration_since(UNIX_EPOCH)
