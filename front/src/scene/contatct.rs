@@ -15,7 +15,6 @@ impl yew::Component for Contact {
         html! {<>
             <div class="contact">
                 <h1>{"Contact Me"}</h1>
-                // <p>{"Vous pouvez me contacter sur ces adresses mail:"}</p>
                 { "TODO" }
             </div>
         </>}

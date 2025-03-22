@@ -1,46 +1,52 @@
-###########
-## BUILD ##
-###########
-FROM rust:1.85 AS builder
+FROM rust:1.85 AS base
 
-# Install build dependencies
 RUN rustup target add wasm32-unknown-unknown
 RUN cargo install --locked wasm-bindgen-cli
+# RUN cargo install sccache 
+RUN cargo install cargo-chef 
 
-# Setup
+FROM base AS planner
+
 WORKDIR /app
 
-# Get build scripts
-RUN mkdir ./scripts
-COPY ./scripts/build.sh ./scripts/build_back.sh ./scripts/build_front.sh ./scripts
-
-# Copy project
-COPY Cargo.toml Cargo.lock Rocket.toml .
-
+COPY ./Rocket.toml ./Cargo.toml ./Cargo.lock .
 COPY ./back ./back
 COPY ./front ./front
 COPY ./shared ./shared
 
-# Build the whole project
-RUN sh ./scripts/build.sh release
+RUN cargo chef prepare --recipe-path recipe.json
 
-#########
-## RUN ##
-#########
-FROM ubuntu:22.04 AS runner
-# FROM scratch Causes issues with musl libc ? something like that
-# check this for more info https://dev.to/mattdark/rust-docker-image-optimization-with-multi-stage-builds-4b6c
- 
+FROM base AS builder
+
 WORKDIR /app
 
-COPY --from=builder /app/target/release/leaguecord .
-COPY --from=builder /app/Rocket.toml .
+COPY --from=planner /app/recipe.json recipe.json
+
+RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo chef cook -p front --release --target=wasm32-unknown-unknown --recipe-path recipe.json
+
+COPY ./scripts/build.sh ./scripts/build_back.sh ./scripts/build_front.sh ./scripts/
+COPY ./Rocket.toml ./Cargo.toml ./Cargo.lock .
+COPY ./back ./back
+COPY ./front ./front
+COPY ./shared ./shared
+
+RUN sh ./scripts/build.sh release
+
+
+FROM ubuntu:22.04 AS runner
+
+WORKDIR /app
+
+# Here we take the rocket config from builder because it has been used to build the front end, to elimiate all TOCTOU / desync issues, we use the same one
+COPY --from=builder /app/target/release/leaguecord /app/Rocket.toml .
 COPY ./static ./static
 COPY --from=builder /app/target/wasm-bindgen/release/* ./static/
 COPY ./.env .
 
-RUN mkdir log
+RUN mkdir ./log
 
 EXPOSE 42069
 
 CMD ["./leaguecord"]
+

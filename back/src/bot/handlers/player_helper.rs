@@ -84,7 +84,7 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
                     CreateEmbed::new()
                         .author(CreateEmbedAuthor::new("Leaguecord"))
                         .color((153, 170, 187)).title("Leaguecord, a voice chat for league")
-                        .description("Hi and welcome to leaguecord.\nAn internal error occured during the wellbeing check of your account, for more information, contact an admin"),
+                        .description("Hi and welcome to leaguecord.\nAn internal error occured during the well-being check of your account, for more information, contact an admin"),
                 );
 
     // Small sanity check
