@@ -1,18 +1,10 @@
-use yew::prelude::*;
-
-#[derive(Debug, Properties, PartialEq)]
+#[derive(Debug, yew::Properties, PartialEq)]
 pub struct Props {
     pub texts: Vec<&'static str>,
     pub delay_ms: u32,
 }
 pub struct ChangingText {
     current_index: usize,
-}
-pub enum Message {
-    Test,
-    CreateGroup,
-    GroupCreated(u64),
-    GroupCreateError(wasm_bindgen::JsValue),
 }
 impl yew::Component for ChangingText {
     type Message = ();
