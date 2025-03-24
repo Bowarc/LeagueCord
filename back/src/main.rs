@@ -17,7 +17,6 @@ fn setup_loggers() {
         ("tungstenite", LevelFilter::Warn),
         ("reqwest", LevelFilter::Warn),
         ("rustls", LevelFilter::Warn),
-        ("rocket", LevelFilter::Warn),
     ];
 
     logger::init([
@@ -25,6 +24,7 @@ fn setup_loggers() {
             .output(logger::Output::Stdout)
             .colored(true)
             .level(LevelFilter::Trace)
+            .filter("rocket", LevelFilter::Warn)
             .filters(DEP_FILTERS),
         logger::Config::default()
             .output(logger::Output::new_timed_file(
@@ -32,18 +32,19 @@ fn setup_loggers() {
                 Duration::from_secs(3600), // 1h
             ))
             .colored(false)
-            .level(log::LevelFilter::Off) // Disable everything by default to make it server-specific
             .filters(DEP_FILTERS)
-            .filter("server", LevelFilter::Trace),
+            .filter("rocket", LevelFilter::Warn)
+            .filter("::data", LevelFilter::Off)
+            .filter("::bot", LevelFilter::Off),
         logger::Config::default()
             .output(logger::Output::new_timed_file(
                 "./log/bot.log",
                 Duration::from_secs(3600), // 1h
             ))
             .colored(false)
-            .level(log::LevelFilter::Off) // Disable everything by default to make it bot-specific
             .filters(DEP_FILTERS)
-            .filter("bot", LevelFilter::Trace),
+            .filter("rocket", LevelFilter::Off)
+            .filter("::server", LevelFilter::Off)
     ])
 }
 

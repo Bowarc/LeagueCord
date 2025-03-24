@@ -9,6 +9,11 @@ pub use create_group_route::create_group;
 pub use group_not_found_route::group_not_found;
 pub use group_route::{group, group_data};
 
+#[rocket::get("/404")]
+pub async fn notfound(remote_addr: std::net::SocketAddr) -> super::response::Response {
+    root(remote_addr).await
+}
+
 #[rocket::get("/")]
 pub async fn root(remote_addr: std::net::SocketAddr) -> super::response::Response {
     use rocket::http::ContentType;

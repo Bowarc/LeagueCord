@@ -3,10 +3,6 @@ pub mod error;
 pub mod response;
 pub mod routes;
 
-#[rocket::get("/404")]
-async fn notfound(remote_addr: std::net::SocketAddr) -> response::Response {
-    routes::root(remote_addr).await
-}
 
 pub async fn build_rocket(
     http: std::sync::Arc<serenity::all::Http>,
@@ -20,13 +16,13 @@ pub async fn build_rocket(
         .manage(GroupCreationSpamTracker::default())
         .register(
             "/",
-            rocket::catchers![catchers::root_403, catchers::root_404],
+            rocket::catchers![catchers::root_404],
         )
         .mount(
             "/",
             rocket::routes![
                 routes::root,
-                notfound,
+                routes::notfound,
                 routes::create_group,
                 routes::group,
                 routes::group_data,
