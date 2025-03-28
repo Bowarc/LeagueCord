@@ -39,9 +39,9 @@ impl GroupCreationSpamTracker {
             .retain(|_ip, (instant, _id)| now - *instant < TRACKER_DURATION);
     }
 
-    pub async fn has(&self, ip: std::net::IpAddr) -> Option<GroupId> {
-        self.0.read().await.get(&ip).map(|(_, id)| *id)
-    }
+    // pub async fn has(&self, ip: std::net::IpAddr) -> Option<GroupId> {
+    //     self.0.read().await.get(&ip).map(|(_, id)| *id)
+    // }
 
     pub async fn register(&self, ip: std::net::IpAddr, group_id: GroupId) {
         use std::time::Instant;
@@ -54,7 +54,7 @@ impl GroupCreationSpamTracker {
         }
     }
 
-    pub async fn remove(&self, ip: std::net::IpAddr) {
-        self.0.write().await.remove(&ip);
-    }
+    // pub async fn remove(&self, ip: std::net::IpAddr) {
+    //     self.0.write().await.remove(&ip);
+    // }
 }

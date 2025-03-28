@@ -83,6 +83,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
     let ctx_data_storage = ctx.data.clone();
     let ctx_data_storage_read = ctx_data_storage.read().await;
+
     let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
         error!("Could not get tracked invites from data");
         return;
@@ -163,5 +164,10 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
                 error!("Failed due to: {e}");
             }
         }
+    }
+
+    // Cleanup group storage
+    {
+        data.groups.write().await.clear();
     }
 }
