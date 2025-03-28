@@ -110,8 +110,8 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
 
     let mut fields = vec![
         ("Groups", "Groups are temporary, when your activity is done, please leave the server and create a new group with your new teammates !", false),
-        ("Creating a group", "To create a group please use the website at <https://groups.bowarc.ovh/>.", false),
-        ("Joining a group", "To join a group, simply join any Leaguecord link with an id at the end (like `https://groups.bowarc.ovh/group/12345678901234567890`).", false),
+        ("Creating a group", "To create a group please use the website at <https://leaguecord.com/>.", false),
+        ("Joining a group", "To join a group, simply join any Leaguecord link with an id at the end (like `https://leaguecord.com/group/12345678901234567890`).", false),
         ("Leaving a group", "To leave a group, simply leave the server.", false),
         ("Group Permissions", "Each member of a group only has the ability to see and interact with it's own group. This way, you can enjoy a focused and private environment for your team without distractions from other groups.", false),
         ("Secure groups (TODO)", "Secure groups offer the possiblity to filter who can and cannot join your group.", false),
