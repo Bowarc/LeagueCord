@@ -3,7 +3,7 @@
 #[rocket::get("/group/<id>")]
 pub async fn group(
     id: crate::data::GroupId,
-    remote_addr: std::net::SocketAddr,
+    ip_addr: std::net::IpAddr,
     lc_data: &rocket::State<crate::data::LeagueCordData>,
 ) -> super::super::response::Response {
     use super::super::response::Response;
@@ -19,7 +19,7 @@ pub async fn group(
         return Response::redirect("/group_not_found");
     }
 
-    root(remote_addr).await
+    root(ip_addr).await
 }
 
 #[rocket::get("/group_data/<id>")]

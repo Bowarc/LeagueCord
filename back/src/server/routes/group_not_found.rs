@@ -1,8 +1,8 @@
 #[rocket::get("/group_not_found")]
 pub async fn group_not_found(
-    remote_addr: std::net::SocketAddr,
+    ip_addr: std::net::IpAddr,
 ) -> super::super::response::Response {
     use super::root;
 
-    root(remote_addr).await
+    root(ip_addr).await
 }

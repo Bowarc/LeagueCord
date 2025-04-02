@@ -2,7 +2,7 @@
 pub async fn create_group(
     lc_data: &rocket::State<crate::data::LeagueCordData>,
     http: &rocket::State<std::sync::Arc<serenity::all::Http>>,
-    remote_addr: std::net::SocketAddr,
+    ip_addr: std::net::IpAddr,
     spam_tracker: &rocket::State<crate::data::GroupCreationSpamTracker>,
 ) -> super::super::response::Response {
     use {
@@ -13,21 +13,21 @@ pub async fn create_group(
     let ids = &lc_data.ids;
     spam_tracker.update().await;
 
-    // if let Some(group_id) = spam_tracker.has(remote_addr.ip()).await {
-    //     if lc_data.groups.read().await.iter().any(|g| g.id == group_id) {
-    //         return Response::builder()
-    //             .with_content(group_id.to_string())
-    //             .build();
-    //     }
-    //     warn!("Fail to short-circuit group creation due to: Could not find a group with id: {group_id}");
-    //     spam_tracker.remove(remote_addr.ip()).await;
-    // }
+    if let Some(group_id) = spam_tracker.has(ip_addr).await {
+        if lc_data.groups.read().await.iter().any(|g| g.id == group_id) {
+            return Response::builder()
+                .with_content(group_id.to_string())
+                .build();
+        }
+        warn!("Fail to short-circuit group creation due to: Could not find a group with id: {group_id}");
+        spam_tracker.remove(ip_addr).await;
+    }
 
     match Group::create_new(http.http(), ids).await {
         Ok(group) => {
             let group_id = group.id;
 
-            spam_tracker.register(remote_addr.ip(), group.id).await;
+            spam_tracker.register(ip_addr, group.id).await;
 
             // Don't forget to update lc_data
             lc_data
@@ -44,7 +44,7 @@ pub async fn create_group(
                 .build()
         }
         Err(e) => {
-            error!("Failed to create group for {remote_addr} due to: {e}");
+            error!("Failed to create group for {ip_addr} due to: {e}");
             Response::builder()
                 .with_status(Status::InternalServerError)
                 .with_content("Failed to create a group".to_string())
