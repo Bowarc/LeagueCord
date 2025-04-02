@@ -5,3 +5,4 @@ pub struct IdCache {
     pub graveyard_category: serenity::all::ChannelId,
     pub bot_log_channel: serenity::all::ChannelId,
 }
+

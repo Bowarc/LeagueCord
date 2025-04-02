@@ -74,7 +74,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
     let Some(_args) = command::parse(
         message,
-        "cleanup",
+        "reset",
         command::Case::Insensitive,
         command::Prefix::Yes,
     ) else {

@@ -1,3 +1,5 @@
+use serenity::all::{CacheHttp, CreateMessage};
+
 #[rocket::get("/create_group")]
 pub async fn create_group(
     lc_data: &rocket::State<crate::data::LeagueCordData>,
@@ -7,7 +9,7 @@ pub async fn create_group(
 ) -> super::super::response::Response {
     use {
         super::super::response::Response, crate::data::Group, rocket::http::Status,
-        serenity::all::CacheHttp as _,
+        serenity::all::CacheHttp as _, serenity::all::CreateMessage,
     };
 
     let ids = &lc_data.ids;
@@ -38,6 +40,21 @@ pub async fn create_group(
                 .await
                 .unwrap();
             lc_data.groups.write().await.push(group);
+
+            debug!("Created group {group_id} for [{ip_addr}]");
+
+            if let Err(e) = lc_data
+                .ids
+                .bot_log_channel
+                .send_message(
+                    http.http(),
+                    CreateMessage::new()
+                        .content(format!("Created group {group_id} for [{ip_addr}]")),
+                )
+                .await
+            {
+                error!("Failed to send group creation message in bot log channel due to: {e}");
+            }
 
             Response::builder()
                 .with_content(group_id.to_string())

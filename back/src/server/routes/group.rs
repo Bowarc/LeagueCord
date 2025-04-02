@@ -25,13 +25,16 @@ pub async fn group(
 #[rocket::get("/group_data/<id>")]
 pub async fn group_data(
     id: crate::data::GroupId,
+    ip_addr: std::net::IpAddr,
     lc_data: &rocket::State<crate::data::LeagueCordData>,
 ) -> super::super::response::Response {
     use {super::super::response::Response, rocket::http::Status};
+    
+    debug!("Request of group {id}'s data by [{ip_addr}]");
 
     let groups_read = lc_data.groups.read().await;
     let Some(group) = groups_read.iter().find(|g| g.id == id) else {
-        println!("NOT FOUND");
+        error!("Could not find any info about group {id}, request from [{ip_addr}]");
         return Response::builder().with_status(Status::NotFound).build();
     };
 
@@ -44,7 +47,6 @@ pub async fn group_data(
                 .build();
         }
     };
-    println!("Requested group data for group: {}", group.id);
 
     Response::builder()
         .with_content(object)
