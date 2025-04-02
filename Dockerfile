@@ -6,7 +6,7 @@ FROM rust:1.85 AS base
 RUN rustup target add wasm32-unknown-unknown
 RUN cargo install --locked wasm-bindgen-cli
 # RUN cargo install sccache 
-RUN cargo install cargo-chef 
+RUN cargo install --git https://github.com/Bowarc/cargo-chef
 
 
 ##########
@@ -36,7 +36,7 @@ WORKDIR /app
 COPY --from=planner /app/recipe.json recipe.json
 
 # Set up the project's build artefacts
-RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json --jobs 1
 RUN cargo chef cook -p front --release --target=wasm32-unknown-unknown --recipe-path recipe.json
 
 # Pull the projects code
