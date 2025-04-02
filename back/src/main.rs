@@ -17,6 +17,7 @@ fn setup_loggers() {
         ("tungstenite", LevelFilter::Warn),
         ("reqwest", LevelFilter::Warn),
         ("rustls", LevelFilter::Warn),
+        ("rocket::server.rs", LevelFilter::Off) // on 0.5.1, it only has infos about querying a 404 and catcher panicking
     ];
 
     logger::init([
