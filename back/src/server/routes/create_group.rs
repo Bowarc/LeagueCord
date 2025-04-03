@@ -28,6 +28,7 @@ pub async fn create_group(
     match Group::create_new(http.http(), ids).await {
         Ok(group) => {
             let group_id = group.id;
+            let group_text_channel_id = group.text_channel.get();
 
             spam_tracker.register(ip_addr, group.id).await;
 
@@ -49,7 +50,7 @@ pub async fn create_group(
                 .send_message(
                     http.http(),
                     CreateMessage::new()
-                        .content(format!("Created group {group_id} for [{ip_addr}]")),
+                        .content(format!("Created group <#{group_text_channel_id}> for [{ip_addr}]")),
                 )
                 .await
             {
