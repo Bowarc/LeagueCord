@@ -17,6 +17,7 @@ fn setup_loggers() {
         ("tungstenite", LevelFilter::Warn),
         ("reqwest", LevelFilter::Warn),
         ("rustls", LevelFilter::Warn),
+        ("rocket", LevelFilter::Error),
         ("rocket::server.rs", LevelFilter::Off) // on 0.5.1, it only has infos about querying a 404 and catcher panicking
     ];
 
@@ -24,28 +25,22 @@ fn setup_loggers() {
         logger::Config::default()
             .output(logger::Output::Stdout)
             .colored(true)
-            .level(LevelFilter::Trace)
-            .filter("rocket", LevelFilter::Warn)
             .filters(DEP_FILTERS),
         logger::Config::default()
             .output(logger::Output::new_timed_file(
-                "./log/server.log",
-                Duration::from_secs(3600), // 1h
+                "./log/leaguecord.log",
+                Duration::from_secs(86400), // 1day
             ))
             .colored(false)
-            .filters(DEP_FILTERS)
-            .filter("rocket", LevelFilter::Warn)
-            .filter("::data", LevelFilter::Off)
-            .filter("::bot", LevelFilter::Off),
+            .filters(DEP_FILTERS),
         logger::Config::default()
             .output(logger::Output::new_timed_file(
-                "./log/bot.log",
-                Duration::from_secs(3600), // 1h
+                "./log/rocket.log",
+                Duration::from_secs(86400), // 1 day
             ))
+            .level(log::LevelFilter::Off)
+            .filter("rocket", log::LevelFilter::Warn)
             .colored(false)
-            .filters(DEP_FILTERS)
-            .filter("rocket", LevelFilter::Off)
-            .filter("::server", LevelFilter::Off)
     ])
 }
 
