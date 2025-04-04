@@ -1,5 +1,7 @@
 pub struct LeagueCord;
 
+
+
 #[serenity::async_trait]
 impl serenity::all::EventHandler for LeagueCord {
     async fn ready(
@@ -9,7 +11,6 @@ impl serenity::all::EventHandler for LeagueCord {
     ) {
         use {
             crate::data::{IdCache, InviteTracker, LeagueCordData},
-            serenity::all::{CreateChannel, CreateCommand},
             std::sync::Arc,
             tokio::sync::RwLock,
         };
@@ -25,76 +26,9 @@ impl serenity::all::EventHandler for LeagueCord {
             .await
             .unwrap();
 
-        // TESTING COMMANDS
-        // TODO: REMOVE THIS
-        {
-            guild
-                .create_command(
-                    ctx.http.clone(),
-                    CreateCommand::new("test").description("Test command"),
-                )
-                .await
-                .unwrap();
-        }
+        // TODO: helper functions to find channels and category (make sure found channels have the right category (leaguecord management))
 
-        let graveyard_category = match ctx
-            .http
-            .get_channels(guild.id)
-            .await
-            .unwrap()
-            .iter()
-            .find(|channel| channel.name == "graveyard")
-        {
-            Some(channel) => channel.id,
-            None => {
-                guild
-                    .id
-                    .create_channel(
-                        ctx.http.clone(),
-                        CreateChannel::new("graveyard").kind(serenity::all::ChannelType::Category),
-                    )
-                    .await
-                    .unwrap()
-                    .id
-            }
-        };
-
-        let bot_log_channel = match ctx
-            .http
-            .get_channels(guild.id)
-            .await
-            .unwrap()
-            .iter()
-            .find(|channel| channel.name == "bot_logs")
-        {
-            Some(channel) => channel.id,
-            None => {
-                guild
-                    .id
-                    .create_channel(
-                        ctx.http.clone(),
-                        CreateChannel::new("bot_logs").kind(serenity::all::ChannelType::Text),
-                    )
-                    .await
-                    .unwrap()
-                    .id
-            }
-        };
-
-        let id_cache = IdCache {
-            guild: guild.id,
-            admin_role: ctx
-                .http
-                .get_guild_roles(guild.id)
-                .await
-                .unwrap()
-                .iter()
-                .find(|role| role.name == "-")
-                .unwrap()
-                .id,
-            graveyard_category,
-            bot_log_channel,
-        };
+        let id_cache = IdCache::new(ctx.clone(), guild.id).await.unwrap();
 
         let invites = InviteTracker::new(ctx.http, &id_cache).await.unwrap();
 

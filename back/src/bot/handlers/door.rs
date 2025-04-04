@@ -152,9 +152,6 @@ impl serenity::all::EventHandler for Door {
                     )).await;
                 }
             }
-            // multiple matches
-            // Send them to a channel that request them to send the invite link or the group code idfk
-            // Force update the invite list
 
             saved_invites_lock
                 .update(ctx.http, &data.ids)

@@ -6,45 +6,6 @@ impl serenity::all::EventHandler for PlayerHelper {
         super::module_command(&ctx, "PlayerHelper", message.clone()).await;
         help_message(ctx, message).await;
     }
-
-    async fn interaction_create(&self, ctx: serenity::all::Context, i: serenity::all::Interaction) {
-        use serenity::all::{
-            CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateInteractionResponse,
-            CreateInteractionResponseMessage, Interaction,
-        };
-
-        let Interaction::Command(c) = i else {
-            return;
-        };
-
-        for option in c.data.options.iter() {
-            println!("{option:?}");
-        }
-
-        if let Err(e) = c
-            .create_response(
-                ctx.http,
-                CreateInteractionResponse::Message(
-                    CreateInteractionResponseMessage::new()
-                        .content("Content")
-                        .embed(
-                            CreateEmbed::new()
-                                .author(CreateEmbedAuthor::new("Me"))
-                                .title("This is a title")
-                                .description("Simple description")
-                                .footer(CreateEmbedFooter::new("Footer")),
-                        )
-                        .ephemeral(true),
-                ),
-            )
-            .await
-        {
-            error!(
-                "Failed to send a reponse to command {} due to: {e}",
-                c.data.name
-            )
-        }
-    }
 }
 
 pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::Message) {
@@ -52,11 +13,9 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
         bot::command,
         data::{Group, LeagueCordData},
     };
-    use serenity::all::{
-        Channel, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage, GuildChannel,
-    };
+    use serenity::all::{Channel, CreateEmbed, CreateEmbedAuthor, CreateMessage};
 
-    let Some(args) = command::parse(
+    let Some(_args) = command::parse(
         &message,
         "help",
         command::Case::Insensitive,
@@ -124,7 +83,7 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
             break 'channel_specific;
         };
 
-        let Some(id) = Group::id_for_name(channel.name()) else {
+        let Some(_id) = Group::id_for_name(channel.name()) else {
             break 'channel_specific;
         };
 

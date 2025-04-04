@@ -2,6 +2,38 @@ pub struct Debug;
 
 #[serenity::async_trait]
 impl serenity::all::EventHandler for Debug {
+    async fn ready(
+        &self,
+        ctx: serenity::all::Context,
+        data_about_bot: serenity::model::prelude::Ready,
+    ) {
+        use serenity::all::CreateCommand;
+
+        let guild = ctx
+            .http
+            .get_guild(data_about_bot.guilds.first().unwrap().id)
+            .await
+            .unwrap();
+
+        guild
+            .create_command(
+                ctx.http.clone(),
+                CreateCommand::new("status").description("Check if the bot is awake"),
+            )
+            .await
+            .unwrap();
+
+        guild
+            .create_command(
+                ctx.http.clone(),
+                CreateCommand::new("devreport").description(
+                    "Command to list different infos about the current activity of the bot",
+                ),
+            )
+            .await
+            .unwrap();
+    }
+
     async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
         use crate::data::LeagueCordData;
 
@@ -25,6 +57,48 @@ impl serenity::all::EventHandler for Debug {
 
         create_group(&ctx, &message).await;
         cleanup(&ctx, &message).await;
+    }
+
+    async fn interaction_create(
+        &self,
+        ctx: serenity::all::Context,
+        interaction: serenity::all::Interaction,
+    ) {
+        use serenity::all::{
+            CreateInteractionResponse, CreateInteractionResponseMessage, Interaction,
+        };
+
+        let Interaction::Command(c) = interaction else {
+            return;
+        };
+
+        match c.data.name.as_str() {
+            "ping" => {
+                for option in c.data.options.iter() {
+                    println!("{option:?}");
+                }
+
+                if let Err(e) = c
+                    .create_response(
+                        ctx.http,
+                        CreateInteractionResponse::Message(
+                            CreateInteractionResponseMessage::new()
+                                .content("I'm up !")
+                                .ephemeral(true),
+                        ),
+                    )
+                    .await
+                {
+                    error!(
+                        "Failed to send a reponse to command {} due to: {e}",
+                        c.data.name
+                    )
+                }
+            }
+            "devreport" => devreport(ctx, c).await,
+
+            _ => return,
+        }
     }
 }
 
@@ -169,5 +243,122 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
     // Cleanup group storage
     {
         data.groups.write().await.clear();
+    }
+}
+
+async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandInteraction) {
+    use {
+        crate::data::{Group, LeagueCordData},
+        serenity::all::{
+            CacheHttp as _, Channel, CreateEmbed, CreateInteractionResponse,
+            CreateInteractionResponseMessage,
+        },
+    };
+
+    let ctx_data_storage = ctx.data.clone();
+    let ctx_data_storage_read = ctx_data_storage.read().await;
+    let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
+        error!("Could not get tracked invites from data");
+        return;
+    };
+
+    // @everyone role doesn't have the permission to run /commands, but just in case
+
+    match ci
+        .user
+        .has_role(ctx.http(), data.ids.guild, data.ids.admin_role)
+        .await
+    {
+        Ok(true) => (), // User has permissions
+        Ok(false) => {
+            if let Err(e) = ci
+                .create_response(
+                    ctx.http,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new()
+                            .content("You do not have the permissions required to use tha command")
+                            .ephemeral(true),
+                    ),
+                )
+                .await
+            {
+                error!("{e}");
+            }
+            return;
+        }
+        Err(error) => {
+            error!(
+                "Failed to query the roles of user '{}' while executing 'devreport' command due to: {error}",
+                ci.user.name
+            );
+
+            if let Err(e) = ci
+                .create_response(
+                    ctx.http,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new()
+                            .content("Internal server error")
+                            .ephemeral(true),
+                    ),
+                )
+                .await
+            {
+                error!("{e}");
+            }
+            return;
+        }
+    }
+
+    if ci.channel_id != data.ids.bot_command_channel {
+        if let Err(e) = ci
+            .create_response(
+                ctx.http,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content("You cannot use that command in this channel")
+                        .ephemeral(true),
+                ),
+            )
+            .await
+        {
+            error!("{e}");
+        }
+        return;
+    }
+
+    let mut embed = CreateEmbed::new()
+        // .author(CreateEmbedAuthor::new("Leaguecord"))
+        .color((36, 219, 144))
+        .title("Leaguecord, a voice chat for league")
+        .description("Hi and welcome to leaguecord.\n");
+
+    let groups = data.groups.read().await;
+    let group_count = groups.len();
+    let member_count: u32 = groups.iter().map(|g| g.users.len() as u32).sum();
+
+    embed = embed.fields(vec![(
+        "Groups",
+        format!(
+            "There are currently {group_count} group{group_s}, for a total of {member_count} members",
+            group_s = if group_count > 1 { "s" } else { "" },
+        ),
+        false,
+    )]);
+
+    if let Err(e) = ci
+        .create_response(
+            ctx.http,
+            CreateInteractionResponse::Message(
+                CreateInteractionResponseMessage::new()
+                    .embed(embed)
+                    .ephemeral(true),
+            ),
+        )
+        .await
+    {
+        error!(
+            "Failed to send a reponse to command {} due to: {e}",
+            ci.data.name
+        )
     }
 }
