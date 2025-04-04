@@ -1,3 +1,5 @@
+use serenity::all::CacheHttp;
+
 pub struct Door;
 
 #[serenity::async_trait]
@@ -50,98 +52,58 @@ impl serenity::all::EventHandler for Door {
             })
             .collect::<Vec<_>>();
 
-        // Only one invite changed
-        if used_invites.len() == 1 {
-            let invite = used_invites.first().unwrap();
+        if used_invites.len() != 1 {
+            warn!("User '{}' tried to join the server, but The Door could not identify what invite they used", new_member.user.name);
 
-            let mut groups = data.groups.write().await;
-
-            // Find the group associated to that invite, else kick em
-            let Some(group) = groups
-                .iter_mut()
-                .find(|group| group.invite_code == invite.code)
-            else {
-                warn!(
-                    "User {} tried to join with an invite that did not correspond to any group.",
-                    new_member.user.name
+            if let Err(e) = new_member.add_role(ctx.http(), data.ids.lost_role).await {
+                error!(
+                    "Failed to set lost role to '{}'({}) due to: {e}",
+                    new_member.user.name, new_member.user.id
                 );
-
-                if let Err(e) = data
-                    .ids
-                    .bot_log_channel
-                    .send_message(
-                        ctx.http(),
-                        CreateMessage::new().content(format!(
-                            "User {} tried to join with an invite that did not correspond to any group.",
-                            new_member.user.name
-                        )),
-                    )
-                    .await
-                {
-                    error!("Failed to send error message to log channel due to: {e}")
-                }
-
-                if let Err(e) = new_member
-                    .kick_with_reason(ctx.http(), "Not appart of a valid group")
-                    .await
-                {
-                    super::log_error(
-                        ctx.clone(),
-                        &data.ids,
-                        &format!(
-                            "Failed to kick new member '{}'({}) due to: {e}",
-                            new_member.display_name(),
-                            new_member.user.id
-                        ),
-                    )
-                    .await
-                };
+                let _ignored = new_member
+                    .kick_with_reason(ctx.http(), "Could not find invite, failed to set lost role")
+                    .await;
                 return;
-            };
-            if let Err(e) = new_member.add_role(ctx.http(), group.role).await {
-                super::log_error(
-                    ctx.clone(),
-                    &data.ids,
-                    &format!(
-                        "Failed to set group role for new member: '{}'({}) due to: {e}",
-                        new_member.display_name(),
-                        new_member.user.id
-                    ),
-                )
-                .await
             }
-            group.users.push(new_member.user.id);
 
-            debug!(
-                "Successfully moved new member ({}) to group: {}",
-                new_member.user.id, group.invite_code
-            );
-
-            let group_text_channel_id = group.text_channel;
-            let http = ctx.http();
-
-            if let Err(e) = group_text_channel_id
+            if let Err(e) = data
+                .ids
+                .bot_log_channel
                 .send_message(
-                    http,
+                    ctx.http(),
                     CreateMessage::new().content(format!(
-                        "New player joined: {}\nMake sure to use `!help` if you have any question",
-                        new_member.mention()
+                        "User '{}' tried to join the server, but The Door could not identify what invite they used\nThey've been sent to the lost channel",
+                         new_member.user.name
                     )),
                 )
                 .await
             {
-                error!("Failed to send welcome message due to: {e}");
+                error!("Failed to send error message to log channel due to: {e}")
             }
 
-            saved_invites_lock.set(invite.code.clone(), invite.uses);
+            saved_invites_lock
+                .update(ctx.http, &data.ids)
+                .await
+                .unwrap();
+
+            return;
         }
-        // Found none or multiple invites that changed since last check
+
+        // Only one invite changed
+        let invite = used_invites.first().unwrap();
+
+        let mut groups = data.groups.write().await;
+
+        // Find the group associated to that invite, else kick em
+        let Some(group) = groups
+            .iter_mut()
+            .find(|group| group.invite_code == invite.code)
         else {
-            // TODO: ? lost user channel ?
             warn!(
-                "Failed to find what invite user {}({}) used to join the server",
-                new_member.user.name, new_member.user.id
+                "User {} tried to join with an invite that did not correspond to any group.",
+                new_member.user.name
             );
+
             if let Err(e) = data
                 .ids
                 .bot_log_channel
@@ -158,34 +120,60 @@ impl serenity::all::EventHandler for Door {
             }
 
             if let Err(e) = new_member
-                .kick_with_reason(ctx.http(), "Could not find the invite the user joined with")
+                .kick_with_reason(ctx.http(), "Not appart of a valid group")
                 .await
             {
                 super::log_error(
                     ctx.clone(),
                     &data.ids,
                     &format!(
-                        "Failed to kick {}({}) due to {e}",
-                        new_member.user.name, new_member.user.id
+                        "Failed to kick new member '{}'({}) due to: {e}",
+                        new_member.display_name(),
+                        new_member.user.id
                     ),
                 )
-                .await;
-            }
-            // TODO: Better user message.
-            {
-                if let Err(e) = new_member.user.dm(ctx.http(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
-                    super::log_error(ctx.clone(), &data.ids, &format!(
-                        "Failed dm {}({}) due to {e}",
-                        new_member.user.name, new_member.user.id
-                    )).await;
-                }
-            }
-
-            saved_invites_lock
-                .update(ctx.http, &data.ids)
                 .await
-                .unwrap();
+            };
+
+            return;
+        };
+
+        if let Err(e) = new_member.add_role(ctx.http(), group.role).await {
+            super::log_error(
+                ctx.clone(),
+                &data.ids,
+                &format!(
+                    "Failed to set group role for new member: '{}'({}) due to: {e}",
+                    new_member.display_name(),
+                    new_member.user.id
+                ),
+            )
+            .await
         }
+        group.users.push(new_member.user.id);
+
+        debug!(
+            "Successfully moved new member ({}) to group: {}",
+            new_member.user.id, group.invite_code
+        );
+
+        let group_text_channel_id = group.text_channel;
+        let http = ctx.http();
+
+        if let Err(e) = group_text_channel_id
+            .send_message(
+                http,
+                CreateMessage::new().content(format!(
+                    "New player joined: {}\nMake sure to use `!help` if you have any question",
+                    new_member.mention()
+                )),
+            )
+            .await
+        {
+            error!("Failed to send welcome message due to: {e}");
+        }
+
+        saved_invites_lock.set(invite.code.clone(), invite.uses);
     }
 
     async fn guild_member_removal(

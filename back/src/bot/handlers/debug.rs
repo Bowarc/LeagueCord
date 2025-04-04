@@ -146,7 +146,7 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
 async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message) {
     use {
         crate::{bot::command, data::LeagueCordData},
-        serenity::all::EditChannel,
+        serenity::all::{EditChannel, CacheHttp as _},
     };
 
     let Some(_args) = command::parse(
