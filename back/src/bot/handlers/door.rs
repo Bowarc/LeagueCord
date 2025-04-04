@@ -13,7 +13,7 @@ impl serenity::all::EventHandler for Door {
     ) {
         use {
             crate::data::LeagueCordData,
-            serenity::all::{CreateMessage, Mentionable as _},
+            serenity::all::{CreateMessage, Mentionable as _, CacheHttp as _},
         };
 
         // Get a read ref of the data
@@ -65,8 +65,22 @@ impl serenity::all::EventHandler for Door {
                     "User {} tried to join with an invite that did not correspond to any group.",
                     new_member.user.name
                 );
+
+                if let Err(e) = data.ids
+                    .bot_log_channel
+                    .send_message(ctx.http(), CreateMessage::new().content(format!(
+
+                    "User {} tried to join with an invite that did not correspond to any group.",
+                    new_member.user.name
+                        
+                    )))
+                    .await
+                {
+                    error!("Failed to send error message to log channel due to: {e}")
+                }
+
                 if let Err(e) = new_member
-                    .kick_with_reason(ctx.http.clone(), "Not appart of a valid group")
+                    .kick_with_reason(ctx.http(), "Not appart of a valid group")
                     .await
                 {
                     super::log_error(
@@ -82,7 +96,7 @@ impl serenity::all::EventHandler for Door {
                 };
                 return;
             };
-            if let Err(e) = new_member.add_role(ctx.http.clone(), group.role).await {
+            if let Err(e) = new_member.add_role(ctx.http(), group.role).await {
                 super::log_error(
                     ctx.clone(),
                     &data.ids,
@@ -102,7 +116,7 @@ impl serenity::all::EventHandler for Door {
             );
 
             let group_text_channel_id = group.text_channel;
-            let http = ctx.http.clone();
+            let http = ctx.http();
 
             if let Err(e) = group_text_channel_id
                 .send_message(
@@ -128,7 +142,7 @@ impl serenity::all::EventHandler for Door {
             );
             if let Err(e) = new_member
                 .kick_with_reason(
-                    ctx.http.clone(),
+                    ctx.http(),
                     "Could not find the invite the user joined with",
                 )
                 .await
@@ -145,7 +159,7 @@ impl serenity::all::EventHandler for Door {
             }
             // TODO: Better user message.
             {
-                if let Err(e) = new_member.user.dm(ctx.http.clone(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
+                if let Err(e) = new_member.user.dm(ctx.http(), CreateMessage::new().content(format!("Hi user {}\nI was not able to find what group you joined, please retry to join the server using the appropriate invite link\nIf this issue persists, please contact `Bowarc`", new_member.user.id))).await {
                     super::log_error(ctx.clone(), &data.ids, &format!(
                         "Failed dm {}({}) due to {e}",
                         new_member.user.name, new_member.user.id

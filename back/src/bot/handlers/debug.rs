@@ -7,7 +7,7 @@ impl serenity::all::EventHandler for Debug {
         ctx: serenity::all::Context,
         data_about_bot: serenity::model::prelude::Ready,
     ) {
-        use serenity::all::CreateCommand;
+        use serenity::all::{CacheHttp as _, CreateCommand};
 
         let guild = ctx
             .http
@@ -17,7 +17,7 @@ impl serenity::all::EventHandler for Debug {
 
         guild
             .create_command(
-                ctx.http.clone(),
+                ctx.http(),
                 CreateCommand::new("status").description("Check if the bot is awake"),
             )
             .await
@@ -25,7 +25,7 @@ impl serenity::all::EventHandler for Debug {
 
         guild
             .create_command(
-                ctx.http.clone(),
+                ctx.http(),
                 CreateCommand::new("devreport").description(
                     "Command to list different infos about the current activity of the bot",
                 ),
@@ -35,7 +35,7 @@ impl serenity::all::EventHandler for Debug {
     }
 
     async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
-        use crate::data::LeagueCordData;
+        use {crate::data::LeagueCordData, serenity::all::CacheHttp as _};
 
         super::module_command(&ctx, "Debug", message.clone()).await;
 
@@ -48,7 +48,7 @@ impl serenity::all::EventHandler for Debug {
 
         if !message
             .author
-            .has_role(ctx.http.clone(), data.ids.guild, data.ids.admin_role)
+            .has_role(ctx.http(), data.ids.guild, data.ids.admin_role)
             .await
             .unwrap()
         {
@@ -103,9 +103,12 @@ impl serenity::all::EventHandler for Debug {
 }
 
 async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Message) {
-    use crate::{
-        bot::command,
-        data::{Group, LeagueCordData},
+    use {
+        crate::{
+            bot::command,
+            data::{Group, LeagueCordData},
+        },
+        serenity::all::CacheHttp as _,
     };
 
     let Some(_args) = command::parse(
@@ -131,12 +134,12 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
     data.invites
         .write()
         .await
-        .update(ctx.http.clone(), &data.ids)
+        .update(ctx.http(), &data.ids)
         .await
         .unwrap();
 
     let _ = message
-        .reply(ctx.http.clone(), format!("discord.gg/{code}"))
+        .reply(ctx.http(), format!("discord.gg/{code}"))
         .await;
 }
 
@@ -178,7 +181,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
     // Channels
     {
-        for (id, mut channel) in guild.channels(ctx.http.clone()).await.unwrap() {
+        for (id, mut channel) in guild.channels(ctx.http()).await.unwrap() {
             if !channel.name.starts_with("g") && channel.name.parse::<u64>().is_err()
                 || channel.id == data.ids.graveyard_category
             {
@@ -187,11 +190,11 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
             debug!("Deleting channel '{}'({id})", channel.name);
 
-            if let Err(e) = channel.delete(ctx.http.clone()).await {
+            if let Err(e) = channel.delete(ctx.http()).await {
                 error!("Failed due to: {e}");
                 channel
                     .edit(
-                        ctx.http.clone(),
+                        ctx.http(),
                         EditChannel::new().category(data.ids.graveyard_category),
                     )
                     .await
@@ -202,7 +205,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
     // Users
     {
-        for member in guild.members(ctx.http.clone(), None, None).await.unwrap() {
+        for member in guild.members(ctx.http(), None, None).await.unwrap() {
             let mut delete = false;
             for role_id in member.roles.iter() {
                 let role = ctx
@@ -219,7 +222,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
                 continue;
             }
 
-            if let Err(e) = member.kick(ctx.http.clone()).await {
+            if let Err(e) = member.kick(ctx.http()).await {
                 error!("Failed to kick user '{}' due to: {e}", member.user.id)
             }
         }
@@ -234,7 +237,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
             debug!("Deleting role '{}'({id})", role.name);
 
-            if let Err(e) = role.delete(ctx.http.clone()).await {
+            if let Err(e) = role.delete(ctx.http()).await {
                 error!("Failed due to: {e}");
             }
         }

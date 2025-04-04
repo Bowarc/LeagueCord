@@ -35,7 +35,8 @@ pub async fn module_command(
     module_name: &str,
     message: serenity::all::Message,
 ) {
-    use crate::bot::command;
+    use {crate::bot::command, serenity::all::CacheHttp as _};
+
     let Some(_args) = command::parse(
         &message,
         "modules",
@@ -48,7 +49,7 @@ pub async fn module_command(
     message
         .channel_id
         .say(
-            ctx.http.clone(),
+            ctx.http(),
             format!("{module_name} module is loaded !"),
         )
         .await

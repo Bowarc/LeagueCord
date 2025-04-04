@@ -9,11 +9,13 @@ impl serenity::all::EventHandler for PlayerHelper {
 }
 
 pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::Message) {
-    use crate::{
-        bot::command,
-        data::{Group, LeagueCordData},
+    use {
+        crate::{
+            bot::command,
+            data::{Group, LeagueCordData},
+        },
+        serenity::all::{CacheHttp as _, Channel, CreateEmbed, CreateEmbedAuthor, CreateMessage},
     };
-    use serenity::all::{Channel, CreateEmbed, CreateEmbedAuthor, CreateMessage};
 
     let Some(_args) = command::parse(
         &message,
@@ -47,15 +49,10 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
                 );
 
     // Small sanity check
-    let Ok(player) = data
-        .ids
-        .guild
-        .member(ctx.http.clone(), message.author.id)
-        .await
-    else {
+    let Ok(player) = data.ids.guild.member(ctx.http(), message.author.id).await else {
         message
             .channel_id
-            .send_message(ctx.http.clone(), simple_message)
+            .send_message(ctx.http(), simple_message)
             .await
             .unwrap();
         return;
@@ -79,7 +76,7 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
     ];
 
     'channel_specific: {
-        let Ok(Channel::Guild(channel)) = message.channel(ctx.http.clone()).await else {
+        let Ok(Channel::Guild(channel)) = message.channel(ctx.http()).await else {
             break 'channel_specific;
         };
 
@@ -94,7 +91,7 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
 
     message
         .channel_id
-        .send_message(ctx.http.clone(), CreateMessage::new().embed(embed))
+        .send_message(ctx.http(), CreateMessage::new().embed(embed))
         .await
         .unwrap();
 }
