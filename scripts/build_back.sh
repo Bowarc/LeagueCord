@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ "$1" = release ] || [ "$1" = r ]
 then
   echo Compiling back using release mode

@@ -40,14 +40,15 @@ RUN cargo chef cook --release --recipe-path recipe.json --jobs 1
 RUN cargo chef cook -p front --release --target=wasm32-unknown-unknown --recipe-path recipe.json
 
 # Pull the projects code
-COPY ./scripts/build.sh ./scripts/build_back.sh ./scripts/build_front.sh ./scripts/
+COPY ./scripts/build_back.sh ./scripts/build_front.sh ./scripts/
 COPY ./Rocket.toml ./Cargo.toml ./Cargo.lock .
 COPY ./back ./back
 COPY ./front ./front
 COPY ./shared ./shared
 
 # Build it
-RUN sh ./scripts/build.sh release
+RUN sh ./scripts/build_back.sh release
+RUN sh ./scripts/build_front.sh release
 
 ##########
 # RUNNER #
