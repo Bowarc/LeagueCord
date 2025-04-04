@@ -3,7 +3,6 @@ pub mod error;
 pub mod response;
 pub mod routes;
 
-
 pub async fn build_rocket(
     http: std::sync::Arc<serenity::all::Http>,
     data: crate::data::LeagueCordData,
@@ -14,10 +13,7 @@ pub async fn build_rocket(
         .manage(http)
         .manage(data)
         .manage(GroupCreationSpamTracker::default())
-        .register(
-            "/",
-            rocket::catchers![catchers::root_404],
-        )
+        .register("/", rocket::catchers![catchers::root_404])
         .mount(
             "/",
             rocket::routes![

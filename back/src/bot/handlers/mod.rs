@@ -48,10 +48,7 @@ pub async fn module_command(
 
     message
         .channel_id
-        .say(
-            ctx.http(),
-            format!("{module_name} module is loaded !"),
-        )
+        .say(ctx.http(), format!("{module_name} module is loaded !"))
         .await
         .unwrap();
 }

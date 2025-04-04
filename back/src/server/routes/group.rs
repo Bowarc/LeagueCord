@@ -29,7 +29,7 @@ pub async fn group_data(
     lc_data: &rocket::State<crate::data::LeagueCordData>,
 ) -> super::super::response::Response {
     use {super::super::response::Response, rocket::http::Status};
-    
+
     debug!("Request of group {id}'s data by [{ip_addr}]");
 
     let groups_read = lc_data.groups.read().await;

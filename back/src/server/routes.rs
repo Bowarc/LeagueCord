@@ -60,10 +60,7 @@ pub async fn favicon_ico(ip_addr: std::net::IpAddr) -> super::response::Response
 // The goal of this method, is to not use FileServer (because i wanna make sure of what file i serve)
 // but i can't do #[rocket::get("/<file>")] as i want to use the get root path for the download api
 #[rocket::get("/resources/<file>")]
-pub async fn static_resource(
-    file: &str,
-    ip_addr: std::net::IpAddr,
-) -> super::response::Response {
+pub async fn static_resource(file: &str, ip_addr: std::net::IpAddr) -> super::response::Response {
     use super::response::Response;
     use rocket::http::Status;
 
@@ -80,10 +77,7 @@ pub async fn static_resource(
 }
 
 #[rocket::get("/css/<file>")]
-pub async fn static_css(
-    file: &str,
-    ip_addr: std::net::IpAddr,
-) -> super::response::Response {
+pub async fn static_css(file: &str, ip_addr: std::net::IpAddr) -> super::response::Response {
     use crate::server::response::Response;
     use rocket::http::Status;
 

@@ -18,7 +18,7 @@ fn setup_loggers() {
         ("reqwest", LevelFilter::Warn),
         ("rustls", LevelFilter::Warn),
         ("rocket", LevelFilter::Error),
-        ("rocket::server.rs", LevelFilter::Off) // on 0.5.1, it only has infos about querying a 404 and catcher panicking
+        ("rocket::server.rs", LevelFilter::Off), // on 0.5.1, it only has infos about querying a 404 and catcher panicking
     ];
 
     logger::init([
@@ -40,7 +40,7 @@ fn setup_loggers() {
             ))
             .level(log::LevelFilter::Off)
             .filter("rocket", log::LevelFilter::Warn)
-            .colored(false)
+            .colored(false),
     ])
 }
 

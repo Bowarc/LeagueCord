@@ -49,8 +49,9 @@ pub async fn create_group(
                 .bot_log_channel
                 .send_message(
                     http.http(),
-                    CreateMessage::new()
-                        .content(format!("Created group <#{group_text_channel_id}> for [{ip_addr}]")),
+                    CreateMessage::new().content(format!(
+                        "Created group <#{group_text_channel_id}> for [{ip_addr}]"
+                    )),
                 )
                 .await
             {

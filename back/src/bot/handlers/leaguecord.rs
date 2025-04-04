@@ -1,7 +1,5 @@
 pub struct LeagueCord;
 
-
-
 #[serenity::async_trait]
 impl serenity::all::EventHandler for LeagueCord {
     async fn ready(

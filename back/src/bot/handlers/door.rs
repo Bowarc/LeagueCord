@@ -13,7 +13,7 @@ impl serenity::all::EventHandler for Door {
     ) {
         use {
             crate::data::LeagueCordData,
-            serenity::all::{CreateMessage, Mentionable as _, CacheHttp as _},
+            serenity::all::{CacheHttp as _, CreateMessage, Mentionable as _},
         };
 
         // Get a read ref of the data
@@ -66,14 +66,16 @@ impl serenity::all::EventHandler for Door {
                     new_member.user.name
                 );
 
-                if let Err(e) = data.ids
+                if let Err(e) = data
+                    .ids
                     .bot_log_channel
-                    .send_message(ctx.http(), CreateMessage::new().content(format!(
-
-                    "User {} tried to join with an invite that did not correspond to any group.",
-                    new_member.user.name
-                        
-                    )))
+                    .send_message(
+                        ctx.http(),
+                        CreateMessage::new().content(format!(
+                            "User {} tried to join with an invite that did not correspond to any group.",
+                            new_member.user.name
+                        )),
+                    )
                     .await
                 {
                     error!("Failed to send error message to log channel due to: {e}")
@@ -140,11 +142,23 @@ impl serenity::all::EventHandler for Door {
                 "Failed to find what invite user {}({}) used to join the server",
                 new_member.user.name, new_member.user.id
             );
-            if let Err(e) = new_member
-                .kick_with_reason(
+            if let Err(e) = data
+                .ids
+                .bot_log_channel
+                .send_message(
                     ctx.http(),
-                    "Could not find the invite the user joined with",
+                    CreateMessage::new().content(format!(
+                        "User {} tried to join with an invite that did not correspond to any group.",
+                        new_member.user.name
+                    )),
                 )
+                .await
+            {
+                error!("Failed to send error message to log channel due to: {e}")
+            }
+
+            if let Err(e) = new_member
+                .kick_with_reason(ctx.http(), "Could not find the invite the user joined with")
                 .await
             {
                 super::log_error(
