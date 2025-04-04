@@ -60,7 +60,8 @@ impl InviteTracker {
     pub fn rm(&mut self, code: &super::InviteCode) {
         use std::time::Instant;
 
-        self.storage.remove(code); // don't really care about errors
+        let _ = self.storage.remove(code); // don't really care about errors
+
         self.last_update = Instant::now()
     }
 }

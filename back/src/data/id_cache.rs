@@ -19,9 +19,16 @@ impl IdCache {
             PermissionOverwriteType, Permissions,
         };
 
+        let mut guild_channels = ctx
+            .http
+            .get_channels(guild_id)
+            .await
+            .map_err(|e| e.to_string())?;
+
         let leaguecord_management_category = find_or_create_channel(
             ctx.clone(),
             guild_id,
+                &mut guild_channels,
             "leaguecord management",
             None,
             ChannelType::Category,
@@ -40,6 +47,7 @@ impl IdCache {
         let community_category = find_or_create_channel(
             ctx.clone(),
             guild_id,
+                &mut guild_channels,
             "Community",
             None,
             ChannelType::Category,
@@ -61,6 +69,7 @@ impl IdCache {
         let lost_channel = find_or_create_channel(
             ctx.clone(),
             guild_id,
+                &mut guild_channels,
             "lost-users",
             Some(community_category),
             ChannelType::Text,
@@ -96,6 +105,7 @@ impl IdCache {
             graveyard_category: find_or_create_channel(
                 ctx.clone(),
                 guild_id,
+                &mut guild_channels,
                 "graveyard",
                 None,
                 ChannelType::Category,
@@ -104,6 +114,7 @@ impl IdCache {
             bot_log_channel: find_or_create_channel(
                 ctx.clone(),
                 guild_id,
+                &mut guild_channels,
                 "bot_logs",
                 Some(leaguecord_management_category),
                 ChannelType::Text,
@@ -112,6 +123,7 @@ impl IdCache {
             bot_command_channel: find_or_create_channel(
                 ctx.clone(),
                 guild_id,
+                &mut guild_channels,
                 "commands",
                 Some(leaguecord_management_category),
                 ChannelType::Text,
@@ -125,23 +137,21 @@ impl IdCache {
 async fn find_or_create_channel(
     ctx: serenity::all::Context,
     guild_id: serenity::all::GuildId,
+    guild_channels: &mut Vec<serenity::all::GuildChannel>,
     name: &str,
     category_id_opt: Option<serenity::all::ChannelId>,
     kind: serenity::all::ChannelType,
 ) -> Result<serenity::all::ChannelId, String> {
     use serenity::all::{CacheHttp, CreateChannel};
 
-    if let Some(channel) = ctx
-        .http()
-        .get_channels(guild_id)
-        .await
-        .map_err(|e| e.to_string())?
-        .iter()
-        .find(|channel| channel.name == name)
-    {
-        if channel.parent_id == category_id_opt {
-            return Ok(channel.id);
-        }
+    let find = || {
+        guild_channels
+            .iter()
+            .find(|channel| channel.name == name && channel.parent_id == category_id_opt)
+    };
+
+    if let Some(channel) = find() {
+        return Ok(channel.id);
     }
 
     let mut create_channel = CreateChannel::new(name).kind(kind);
@@ -150,9 +160,14 @@ async fn find_or_create_channel(
         create_channel = create_channel.category(category_id);
     }
 
-    Ok(guild_id
+    let channel = guild_id
         .create_channel(ctx.http(), create_channel)
         .await
-        .map_err(|e| e.to_string())?
-        .id)
+        .map_err(|e| e.to_string())?;
+
+    let c_id = channel.id;
+
+    guild_channels.push(channel);
+
+    Ok(c_id)
 }
