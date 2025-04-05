@@ -18,7 +18,7 @@ impl yew::Component for ChangingText {
         Self { current_index: 0 }
     }
 
-    fn update(&mut self, ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &yew::Context<Self>, _msg: Self::Message) -> bool {
         self.current_index += 1;
         self.current_index %= ctx.props().texts.len();
         true

@@ -12,9 +12,9 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
     use {
         crate::{
             bot::command,
-            data::{Group, LeagueCordData},
+            data::Group,
         },
-        serenity::all::{CacheHttp as _, Channel, CreateEmbed, CreateEmbedAuthor, CreateMessage},
+        serenity::all::{CacheHttp as _, Channel, CreateEmbed, CreateMessage},
     };
 
     let Some(_args) = command::parse(
@@ -26,40 +26,7 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
         return;
     };
 
-    let ctx_data_storage = ctx.data.clone();
-    let ctx_data_storage_read = ctx_data_storage.read().await;
-    let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
-        error!("Could not get tracked invites from data");
-        if let Err(e) = message
-            .reply(ctx.http, "An error has occured, please contact an admin")
-            .await
-        {
-            error!("Player helper failed to send error message to user due to: {e}");
-        }
-        return;
-    };
-
-    // Simple message to use as backup if an error occured while creating the normal one
-    let simple_message =  CreateMessage::new()
-                .embed(
-                    CreateEmbed::new()
-                        .author(CreateEmbedAuthor::new("Leaguecord"))
-                        .color((153, 170, 187)).title("Leaguecord, a voice chat for league")
-                        .description("Hi and welcome to leaguecord.\nAn internal error occured during the well-being check of your account, for more information, contact an admin"),
-                );
-
-    // Small sanity check
-    let Ok(player) = data.ids.guild.member(ctx.http(), message.author.id).await else {
-        message
-            .channel_id
-            .send_message(ctx.http(), simple_message)
-            .await
-            .unwrap();
-        return;
-    };
-
     let mut embed = CreateEmbed::new()
-        // .author(CreateEmbedAuthor::new("Leaguecord"))
         .color((36, 219, 144))
         .title("Leaguecord, a voice chat for league")
         .description("Hi and welcome to leaguecord.\n");
@@ -70,7 +37,7 @@ pub async fn help_message(ctx: serenity::all::Context, message: serenity::all::M
         ("Joining a group", "To join a group, simply join any Leaguecord link with an id at the end (like `https://leaguecord.com/group/12345678901234567890`).", false),
         ("Leaving a group", "To leave a group, simply leave the server.", false),
         ("Group Permissions", "Each member of a group only has the ability to see and interact with it's own group. This way, you can enjoy a focused and private environment for your team without distractions from other groups.", false),
-        ("Secure groups (TODO)", "Secure groups offer the possiblity to filter who can and cannot join your group.", false),
+        ("Secure groups (TODO #9)", "Secure groups offer the possiblity to filter who can and cannot join your group.", false),
         ("Deleting a group", "To delete a group, simply leave the server, the group will be automatically cleaned up.", false),
         ("Help and support", "I havn't done anything specific for this (yet), so just send me a dm !", false)
     ];

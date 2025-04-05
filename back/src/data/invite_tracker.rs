@@ -53,14 +53,14 @@ impl InviteTracker {
     pub fn set(&mut self, code: super::InviteCode, uc: super::InviteUseCount) {
         use std::time::Instant;
 
-        self.storage.insert(code, uc);
+        let _old = self.storage.insert(code, uc); // I don't care if I replace an item
         self.last_update = Instant::now();
     }
 
     pub fn rm(&mut self, code: &super::InviteCode) {
         use std::time::Instant;
 
-        let _ = self.storage.remove(code); // don't really care about errors
+        let _ = self.storage.remove(code); // Don't really care about this
 
         self.last_update = Instant::now()
     }

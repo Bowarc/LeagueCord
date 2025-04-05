@@ -6,7 +6,7 @@ pub struct IdCache {
     pub graveyard_category: serenity::all::ChannelId,
     pub bot_log_channel: serenity::all::ChannelId,
     pub bot_command_channel: serenity::all::ChannelId,
-    pub lost_channel: serenity::all::ChannelId,
+    // pub lost_channel: serenity::all::ChannelId,
 }
 
 impl IdCache {
@@ -28,7 +28,7 @@ impl IdCache {
         let leaguecord_management_category = find_or_create_channel(
             ctx.clone(),
             guild_id,
-                &mut guild_channels,
+            &mut guild_channels,
             "leaguecord management",
             None,
             ChannelType::Category,
@@ -47,7 +47,7 @@ impl IdCache {
         let community_category = find_or_create_channel(
             ctx.clone(),
             guild_id,
-                &mut guild_channels,
+            &mut guild_channels,
             "Community",
             None,
             ChannelType::Category,
@@ -69,7 +69,7 @@ impl IdCache {
         let lost_channel = find_or_create_channel(
             ctx.clone(),
             guild_id,
-                &mut guild_channels,
+            &mut guild_channels,
             "lost-users",
             Some(community_category),
             ChannelType::Text,
@@ -85,7 +85,7 @@ impl IdCache {
             lost_channel
                 .send_message(
                     ctx.http(),
-                    CreateMessage::new().add_embed(CreateEmbed::new().field("", "Hi,\n\nLooks like our system could not find what group you tried to join.\n\nTo fix this, please try leaving the server and joining again using the same link.\n\nI'm working on a fix.", false).color((36, 219, 144))),
+                    CreateMessage::new().add_embed(CreateEmbed::new().field("", "Hi,\n\nLooks like our system could not find what group you tried to join.\n\nPlease try leaving the server and joining again using the same link.\n\nI'm working on a fix.", false).color((36, 219, 144))),
                 )
                 .await
                 .map_err(|e| e.to_string())?;
@@ -129,7 +129,7 @@ impl IdCache {
                 ChannelType::Text,
             )
             .await?,
-            lost_channel,
+            // lost_channel,
         })
     }
 }

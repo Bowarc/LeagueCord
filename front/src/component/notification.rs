@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 // thread local: https://discord.com/channels/273534239310479360/1120124565591425034/1259034522888966164
 thread_local! {
     // const: https://discord.com/channels/273534239310479360/1120124565591425034/1259038525823651870

@@ -1,5 +1,3 @@
-use serenity::all::{CacheHttp, CreateMessage};
-
 #[rocket::get("/create_group")]
 pub async fn create_group(
     lc_data: &rocket::State<crate::data::LeagueCordData>,

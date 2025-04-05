@@ -1,4 +1,5 @@
 mod notification;
+#[allow(unused)]
 pub use notification::{push_notification, Notification, NotificationManager};
 mod changing_text;
 

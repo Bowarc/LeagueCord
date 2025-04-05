@@ -46,11 +46,12 @@ impl serenity::all::EventHandler for Debug {
             return;
         };
 
-        if !message
+        if message
             .author
             .has_role(ctx.http(), data.ids.guild, data.ids.admin_role)
             .await
-            .unwrap()
+            .ok()
+            != Some(true)
         {
             return;
         }
@@ -146,7 +147,7 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
 async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message) {
     use {
         crate::{bot::command, data::LeagueCordData},
-        serenity::all::{EditChannel, CacheHttp as _},
+        serenity::all::{CacheHttp as _, EditChannel},
     };
 
     let Some(_args) = command::parse(
@@ -251,9 +252,10 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 
 async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandInteraction) {
     use {
-        crate::data::{Group, LeagueCordData},
+        crate::data::LeagueCordData,
+        futures::StreamExt as _,
         serenity::all::{
-            CacheHttp as _, Channel, CreateEmbed, CreateInteractionResponse,
+            CacheHttp as _, CreateEmbed, CreateInteractionResponse,
             CreateInteractionResponseMessage,
         },
     };
@@ -332,21 +334,45 @@ async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandIntera
     let mut embed = CreateEmbed::new()
         // .author(CreateEmbedAuthor::new("Leaguecord"))
         .color((36, 219, 144))
-        .title("Leaguecord, a voice chat for league")
-        .description("Hi and welcome to leaguecord.\n");
+        .title("Dev report")
+        .description("Display of basic leaguecord informations.\n");
 
     let groups = data.groups.read().await;
     let group_count = groups.len();
     let member_count: u32 = groups.iter().map(|g| g.users.len() as u32).sum();
 
-    embed = embed.fields(vec![(
-        "Groups",
-        format!(
-            "There are currently {group_count} group{group_s}, for a total of {member_count} members",
-            group_s = if group_count > 1 { "s" } else { "" },
+    let mut losts = Vec::new();
+    while let Some(member_r) = data.ids.guild.members_iter(ctx.http()).boxed().next().await {
+        let Ok(member) = member_r else {
+            continue;
+        };
+
+        if !member.roles.contains(&data.ids.lost_role) {
+            continue;
+        }
+
+        losts.push(member);
+    }
+
+    embed = embed.fields(vec![
+        (
+            "Groups",
+            format!(
+                "There are currently {group_count} group{group_s}, for a total of {member_count} members",
+                group_s = if group_count > 1 { "s" } else { "" },
+            ),
+            false,
         ),
-        false,
-    )]);
+        (
+            "Lost users",
+            format!(
+                "There are currently {} lost users in this server",
+                losts.len()
+            ),
+            false,
+        ),
+        // TODO: more ?
+    ]);
 
     if let Err(e) = ci
         .create_response(

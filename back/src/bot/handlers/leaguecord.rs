@@ -24,8 +24,6 @@ impl serenity::all::EventHandler for LeagueCord {
             .await
             .unwrap();
 
-        // TODO: helper functions to find channels and category (make sure found channels have the right category (leaguecord management))
-
         let id_cache = IdCache::new(ctx.clone(), guild.id).await.unwrap();
 
         let invites = InviteTracker::new(ctx.http, &id_cache).await.unwrap();

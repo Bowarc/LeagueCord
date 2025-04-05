@@ -1,5 +1,3 @@
-use serenity::all::CacheHttp;
-
 pub struct Door;
 
 #[serenity::async_trait]
@@ -45,6 +43,7 @@ impl serenity::all::EventHandler for Door {
             .filter(|invite| {
                 let Some(saved_invite_use_count) = saved_invites_lock.get(&invite.code) else {
                     debug!("New invite: {invite:?}");
+                    saved_invites_lock.set(invite.code.clone(), invite.uses);
                     return false;
                 };
 

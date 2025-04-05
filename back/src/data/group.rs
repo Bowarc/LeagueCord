@@ -105,9 +105,8 @@ impl Group {
         ) {
             (Ok(text), Ok(voice)) => (text, voice),
             (Ok(c), Err(e)) | (Err(e), Ok(c)) => {
-                if let Err(e) = c.delete(http).await {
-                    // error!("Failed to cleanup channel {c} due to: {e}");
-                }
+
+                let _ignored = c.delete(http).await;
                 return Err(e.to_string());
             }
             (Err(e1), Err(e2)) => {

@@ -46,13 +46,13 @@ impl Response {
             .build()
     }
 
-    pub fn status(&self) -> &rocket::http::Status {
-        &self.status
-    }
+    // pub fn status(&self) -> &rocket::http::Status {
+    //     &self.status
+    // }
 
-    pub fn headers(&self) -> &std::collections::HashMap<String, String> {
-        &self.headers
-    }
+    // pub fn headers(&self) -> &std::collections::HashMap<String, String> {
+    //     &self.headers
+    // }
 }
 
 impl<'r> rocket::response::Responder<'r, 'static> for Response {
