@@ -15,7 +15,18 @@ impl yew::Component for Contact {
         html! {<>
             <div class="contact">
                 <h1>{"Contact Me"}</h1>
-                { "TODO" }
+                <p>{"You can reach me at: "}</p>
+                <table>
+                    <tr>
+                        <th>{
+                            "Email: "
+                        }</th>
+                        <td>{
+                            "contact@bowarc.ovh"
+                        }</td>
+                    </tr>
+                </table>
+                
             </div>
         </>}
     }
