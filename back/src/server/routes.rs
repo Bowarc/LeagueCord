@@ -1,3 +1,5 @@
+#[path = "routes/bots.rs"]
+mod bot_routes;
 #[path = "routes/create_group.rs"]
 mod create_group_route;
 #[path = "routes/group_not_found.rs"]
@@ -5,6 +7,7 @@ mod group_not_found_route;
 #[path = "routes/group.rs"]
 mod group_route;
 
+pub use bot_routes::{bot_admin, bot_env, bot_wp, bot_wp_admin, bot_wordpress};
 pub use create_group_route::create_group;
 pub use group_not_found_route::group_not_found;
 pub use group_route::{group, group_data};

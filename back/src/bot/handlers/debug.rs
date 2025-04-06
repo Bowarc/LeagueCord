@@ -75,10 +75,6 @@ impl serenity::all::EventHandler for Debug {
 
         match c.data.name.as_str() {
             "ping" => {
-                for option in c.data.options.iter() {
-                    println!("{option:?}");
-                }
-
                 if let Err(e) = c
                     .create_response(
                         ctx.http,
@@ -98,7 +94,7 @@ impl serenity::all::EventHandler for Debug {
             }
             "devreport" => devreport(ctx, c).await,
 
-            _ => return,
+            _ => debug!("Unknown command from {}: {}", c.user.name, c.data.name),
         }
     }
 }
@@ -253,7 +249,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandInteraction) {
     use {
         crate::data::LeagueCordData,
-        futures::StreamExt as _,
+        // futures::StreamExt as _,
         serenity::all::{
             CacheHttp as _, CreateEmbed, CreateInteractionResponse,
             CreateInteractionResponseMessage,
@@ -341,18 +337,24 @@ async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandIntera
     let group_count = groups.len();
     let member_count: u32 = groups.iter().map(|g| g.users.len() as u32).sum();
 
-    let mut losts = Vec::new();
-    while let Some(member_r) = data.ids.guild.members_iter(ctx.http()).boxed().next().await {
-        let Ok(member) = member_r else {
-            continue;
-        };
+    let losts = Vec::<serenity::all::Member>::new();
 
-        if !member.roles.contains(&data.ids.lost_role) {
-            continue;
-        }
+    // There is an issue with member_iter, the same member is repeated infinitely
+    // while let Some(member_r) = data.ids.guild.members_iter(ctx.http()).boxed().next().await {
+    //     debug!("Got member: {member_r:?}");
+    //     let Ok(member) = member_r else {
+    //         warn!("its an err");
+    //         continue;
+    //     };
 
-        losts.push(member);
-    }
+    //     if !member.roles.contains(&data.ids.lost_role) {
+    //         warn!("Is not lost");
+    //                     continue;
+    //     }
+    //     debug!("is lost");
+
+    //     losts.push(member);
+    // }
 
     embed = embed.fields(vec![
         (

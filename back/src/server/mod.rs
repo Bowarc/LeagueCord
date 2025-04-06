@@ -29,6 +29,13 @@ pub async fn build_rocket(
                 routes::static_resource,
                 routes::static_css,
                 routes::favicon_ico,
+
+                // Theses routes are troll routes, made to fuck with the bots
+                routes::bot_env,
+                routes::bot_admin,
+                routes::bot_wp,
+                routes::bot_wordpress,
+                routes::bot_wp_admin,
             ],
         )
         .ignite()
