@@ -14,7 +14,7 @@ async fn bot_main(
         rocket::http::{ContentType, Status},
     };
 
-    info!("[{ip}] has hit the bot route '{route:?}'");
+    info!("[{ip}] has hit the bot route {route:?}");
 
     Response::builder()
         .with_content("Get the fuck out")
