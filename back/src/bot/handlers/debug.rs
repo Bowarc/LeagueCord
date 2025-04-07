@@ -46,18 +46,29 @@ impl serenity::all::EventHandler for Debug {
             return;
         };
 
-        if message
-            .author
-            .has_role(ctx.http(), data.ids.guild, data.ids.admin_role)
-            .await
-            .ok()
-            != Some(true)
-        {
+        if !super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
+            if let Err(e) = message
+                .reply(
+                    ctx.http(),
+                    "You don't have the required permissions to use this module",
+                )
+                .await
+            {
+                super::log_error(
+                    ctx.http(),
+                    &data.ids,
+                    &format!(
+                        "Failed to send error reply to {} who use a debug command due to: {e}",
+                        message.author.name
+                    ),
+                )
+                .await
+            }
             return;
         }
 
         create_group(&ctx, &message).await;
-        cleanup(&ctx, &message).await;
+        reset(&ctx, &message).await;
     }
 
     async fn interaction_create(
@@ -65,17 +76,52 @@ impl serenity::all::EventHandler for Debug {
         ctx: serenity::all::Context,
         interaction: serenity::all::Interaction,
     ) {
-        use serenity::all::{
-            CreateInteractionResponse, CreateInteractionResponseMessage, Interaction,
+        use {
+            crate::data::LeagueCordData,
+            serenity::all::{
+                CacheHttp, CreateInteractionResponse, CreateInteractionResponseMessage, Interaction,
+            },
         };
 
-        let Interaction::Command(c) = interaction else {
+        let Interaction::Command(ci) = interaction else {
             return;
         };
 
-        match c.data.name.as_str() {
+        let ctx_data_storage = ctx.data.clone();
+        let ctx_data_storage_read = ctx_data_storage.read().await;
+        let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
+            error!("Could not get tracked invites from data");
+            return;
+        };
+
+        if !super::has_admin_role(ctx.http(), &ci.user, &data.ids).await {
+            if let Err(e) = ci
+                .create_response(
+                    ctx.http(),
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new().content(
+                            "You do not ahve the required premissions to use that command",
+                        ),
+                    ),
+                )
+                .await
+            {
+                super::log_error(
+                    ctx.clone(),
+                    &data.ids,
+                    &format!(
+                        "An occured while sending error reply to {} who used !reset: {e}",
+                        ci.user.name
+                    ),
+                )
+                .await
+            }
+            return;
+        }
+
+        match ci.data.name.as_str() {
             "ping" => {
-                if let Err(e) = c
+                if let Err(e) = ci
                     .create_response(
                         ctx.http,
                         CreateInteractionResponse::Message(
@@ -88,18 +134,23 @@ impl serenity::all::EventHandler for Debug {
                 {
                     error!(
                         "Failed to send a reponse to command {} due to: {e}",
-                        c.data.name
+                        ci.data.name
                     )
                 }
             }
-            "devreport" => devreport(ctx, c).await,
+            "devreport" => devreport(ctx, ci).await,
 
-            _ => debug!("Unknown command from {}: {}", c.user.name, c.data.name),
+            _ => debug!("Unknown command from {} {}", ci.user.name, ci.data.name),
         }
     }
 }
 
 async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Message) {
+    ///
+    ///  SECURITY:
+    ///    
+    ///    Roles for the user of this command have been checked in the EventHandler::message method
+    ///
     use {
         crate::{
             bot::command,
@@ -124,27 +175,6 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
         return;
     };
 
-    if !super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
-        if let Err(e) = message
-            .reply(
-                ctx.http(),
-                "You do not have the required permissions to use that command",
-            )
-            .await
-        {
-            super::log_error(
-                ctx.clone(),
-                &data.ids,
-                &format!(
-                    "An occured while sending error reply to {:?} who used !reset: {e}",
-                    message.author
-                ),
-            )
-            .await
-        }
-        return;
-    }
-
     let new_group = Group::create_new(ctx.clone(), &data.ids).await.unwrap();
     let code = new_group.invite_code.clone();
     data.groups.write().await.push(new_group);
@@ -161,7 +191,12 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
         .await;
 }
 
-async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message) {
+async fn reset(ctx: &serenity::all::Context, message: &serenity::all::Message) {
+    ///
+    ///  SECURITY:
+    ///    
+    ///    Roles for the user of this command have been checked in the EventHandler::message method
+    ///
     use {
         crate::{bot::command, data::LeagueCordData},
         serenity::all::{CacheHttp as _, EditChannel},
@@ -183,27 +218,6 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
         error!("Could not get tracked invites from data");
         return;
     };
-
-    if !super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
-        if let Err(e) = message
-            .reply(
-                ctx.http(),
-                "You do not have the required permissions to use that command",
-            )
-            .await
-        {
-            super::log_error(
-                ctx.clone(),
-                &data.ids,
-                &format!(
-                    "An occured while sending error reply to {:?} who used !reset: {e}",
-                    message.author
-                ),
-            )
-            .await
-        }
-        return;
-    }
 
     // Groups
     {
@@ -289,11 +303,16 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
 }
 
 async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandInteraction) {
+    ///
+    ///  SECURITY:
+    ///    
+    ///    Roles for the user of this command have been checked in the EventHandler::interaction_create method
+    ///
     use {
         crate::data::LeagueCordData,
         // futures::StreamExt as _,
         serenity::all::{
-            CacheHttp as _, CreateEmbed, CreateInteractionResponse,
+            CreateEmbed, CreateInteractionResponse,
             CreateInteractionResponseMessage,
         },
     };
@@ -304,32 +323,6 @@ async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandIntera
         error!("Could not get tracked invites from data");
         return;
     };
-
-    // @everyone role doesn't have the permission to run /commands, but just in case
-
-    if !super::has_admin_role(ctx.http(), &ci.user, &data.ids).await {
-        if let Err(e) = ci
-            .create_response(
-                ctx.http(),
-                CreateInteractionResponse::Message(
-                    CreateInteractionResponseMessage::new()
-                        .content("You do not have the permissions required to use tha command")
-                        .ephemeral(true),
-                ),
-            )
-            .await
-        {
-            super::log_error(
-                ctx.http(),
-                &data.ids,
-                &format!(
-                    "Error occured while sending permissions error message to {}: {e}",
-                    ci.user.name
-                ),
-            ).await
-        }
-        return;
-    }
 
     if ci.channel_id != data.ids.bot_command_channel {
         if let Err(e) = ci
