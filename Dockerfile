@@ -8,7 +8,6 @@ RUN cargo install --locked wasm-bindgen-cli
 # RUN cargo install sccache 
 RUN cargo install --git https://github.com/Bowarc/cargo-chef
 
-
 ##########
 # PANNER #
 ##########

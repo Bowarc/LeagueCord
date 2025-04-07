@@ -124,6 +124,27 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
         return;
     };
 
+    if super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
+        if let Err(e) = message
+            .reply(
+                ctx.http(),
+                "You do not have the required permissions to use that command",
+            )
+            .await
+        {
+            super::log_error(
+                ctx.clone(),
+                &data.ids,
+                &format!(
+                    "An occured while sending error reply to {:?} who used !reset: {e}",
+                    message.author
+                ),
+            )
+            .await
+        }
+        return;
+    }
+
     let new_group = Group::create_new(ctx.clone(), &data.ids).await.unwrap();
     let code = new_group.invite_code.clone();
     data.groups.write().await.push(new_group);
@@ -162,6 +183,27 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
         error!("Could not get tracked invites from data");
         return;
     };
+
+    if super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
+        if let Err(e) = message
+            .reply(
+                ctx.http(),
+                "You do not have the required permissions to use that command",
+            )
+            .await
+        {
+            super::log_error(
+                ctx.clone(),
+                &data.ids,
+                &format!(
+                    "An occured while sending error reply to {:?} who used !reset: {e}",
+                    message.author
+                ),
+            )
+            .await
+        }
+        return;
+    }
 
     // Groups
     {
@@ -265,49 +307,28 @@ async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandIntera
 
     // @everyone role doesn't have the permission to run /commands, but just in case
 
-    match ci
-        .user
-        .has_role(ctx.http(), data.ids.guild, data.ids.admin_role)
-        .await
-    {
-        Ok(true) => (), // User has permissions
-        Ok(false) => {
-            if let Err(e) = ci
-                .create_response(
-                    ctx.http,
-                    CreateInteractionResponse::Message(
-                        CreateInteractionResponseMessage::new()
-                            .content("You do not have the permissions required to use tha command")
-                            .ephemeral(true),
-                    ),
-                )
-                .await
-            {
-                error!("{e}");
-            }
-            return;
+    if super::has_admin_role(ctx.http(), &ci.user, &data.ids).await {
+        if let Err(e) = ci
+            .create_response(
+                ctx.http(),
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content("You do not have the permissions required to use tha command")
+                        .ephemeral(true),
+                ),
+            )
+            .await
+        {
+            super::log_error(
+                ctx.http(),
+                &data.ids,
+                &format!(
+                    "Error occured while sending permissions error message to {}: {e}",
+                    ci.user.name
+                ),
+            ).await
         }
-        Err(error) => {
-            error!(
-                "Failed to query the roles of user '{}' while executing 'devreport' command due to: {error}",
-                ci.user.name
-            );
-
-            if let Err(e) = ci
-                .create_response(
-                    ctx.http,
-                    CreateInteractionResponse::Message(
-                        CreateInteractionResponseMessage::new()
-                            .content("Internal server error")
-                            .ephemeral(true),
-                    ),
-                )
-                .await
-            {
-                error!("{e}");
-            }
-            return;
-        }
+        return;
     }
 
     if ci.channel_id != data.ids.bot_command_channel {

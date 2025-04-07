@@ -16,14 +16,14 @@ pub use purge::Purge;
 
 use crate::data::IdCache;
 
-pub async fn log_error(ctx: serenity::all::Context, ids: &IdCache, message: &str) {
+pub async fn log_error(http: impl serenity::all::CacheHttp, ids: &IdCache, message: &str) {
     use serenity::all::CreateMessage;
 
     error!("{message}");
 
     if let Err(e) = ids
         .bot_log_channel
-        .send_message(ctx.http, CreateMessage::new().content(message))
+        .send_message(http, CreateMessage::new().content(message))
         .await
     {
         error!("Failed to send error message to log channel due to: {e}")
@@ -51,4 +51,12 @@ pub async fn module_command(
         .say(ctx.http(), format!("{module_name} module is loaded !"))
         .await
         .unwrap();
+}
+
+pub async fn has_admin_role(
+    http: impl serenity::all::CacheHttp,
+    user: &serenity::all::User,
+    ids: &crate::data::IdCache,
+) -> bool {
+    user.has_role(http, ids.guild, ids.admin_role).await.ok() != Some(true)
 }

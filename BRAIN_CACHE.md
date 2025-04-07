@@ -86,3 +86,21 @@ Thread2 (web server)
 
 About front end, check yew-router
 
+
+----
+
+
+The project structure is done, it's working fine now.
+I've really been struggling with motivation to polish this thing (as i do for most projects after making a MVP)
+
+I really need to fix the bare front end.
+
+I've two pages to fill;
+
+- Home:  
+	Some explaining on what is the project used for, how to use it etc..
+- About:  
+	This is for more technical details on the project, it's future, and me
+	With a link to my website ? this shit needs to be cleaned up too :c
+
+

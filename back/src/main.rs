@@ -52,6 +52,13 @@ async fn main() {
 
     setup_loggers();
 
+    // Small print to show the start of the program log in the file
+    trace!(
+        "\n╭{line}╮\n│{message:^30}│\n╰{line}╯",
+        line = "─".repeat(30),
+        message = "Program start"
+    );
+
     dotenv::dotenv().unwrap();
 
     let (http, data, _handle) = bot::run_threaded().await;
@@ -63,13 +70,6 @@ async fn main() {
         };
         break lc_data.clone();
     };
-
-    // Small print to show the start of the program log in the file
-    trace!(
-        "\n╭{line}╮\n│{message:^30}│\n╰{line}╯",
-        line = "─".repeat(30),
-        message = "Program start"
-    );
 
     let rocket = server::build_rocket(http, lc_data).await;
 
@@ -89,7 +89,7 @@ fn display_config<'a>(
     let port = rocket_cfg.port;
     let workers = rocket_cfg.workers;
     // let max_blocking = cfg.max_blocking;
-    let indent = rocket_cfg.ident.as_str().unwrap_or("[ERROR] Undefined");
+    let ident = rocket_cfg.ident.as_str().unwrap_or("Disabled");
     let ip_headers = rocket_cfg
         .ip_header
         .as_ref()
@@ -152,7 +152,7 @@ fn display_config<'a>(
         out
     };
 
-    info!("\nConfig:\nUsing profile: {profile}\nAddress: {address}:{port}\nWorkers: {workers}\nIndent: {indent}\nHeaders: {ip_headers}\nLimits: {formatted_limits}\nConnection lifetime: {keep_alive_s}s\nShutdown mode: {shutdown_mode}\nRoutes: {formatted_routes}\nCatchers: {formatted_catchers}",
+    info!("\nConfig:\nUsing profile: {profile}\nAddress: {address}:{port}\nWorkers: {workers}\nIdent: {ident}\nHeaders: {ip_headers}\nLimits: {formatted_limits}\nConnection lifetime: {keep_alive_s}s\nShutdown mode: {shutdown_mode}\nRoutes: {formatted_routes}\nCatchers: {formatted_catchers}",
         formatted_limits = display_vec(limits),
         formatted_routes = display_vec(routes),
         formatted_catchers = display_vec(catchers)
