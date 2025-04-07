@@ -58,5 +58,5 @@ pub async fn has_admin_role(
     user: &serenity::all::User,
     ids: &crate::data::IdCache,
 ) -> bool {
-    user.has_role(http, ids.guild, ids.admin_role).await.ok() != Some(true)
+    user.has_role(http, ids.guild, ids.admin_role).await.ok() == Some(true)
 }
