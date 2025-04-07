@@ -2,10 +2,18 @@ pub struct Home {
     group_creation_requested: bool,
 }
 
+#[derive(Debug)]
+pub enum GroupCreateError {
+    RequestCreation,
+    Fetch,
+    Parsing,
+    Status(u16),
+}
+
 pub enum Message {
     CreateGroup,
     GroupCreated(u64),
-    GroupCreateError(wasm_bindgen::JsValue),
+    GroupCreateError(GroupCreateError),
 }
 
 #[derive(Debug, PartialEq, yew::Properties)]
@@ -30,7 +38,7 @@ impl yew::Component for Home {
             Message::CreateGroup => {
                 use {
                     gloo::console::log,
-                    wasm_bindgen::{JsCast as _, JsValue},
+                    wasm_bindgen::JsCast as _,
                     wasm_bindgen_futures::JsFuture,
                     web_sys::{window, Request, Response},
                 };
@@ -40,7 +48,12 @@ impl yew::Component for Home {
                 ctx.link().send_future(async move {
                     let request = match Request::new_with_str("/create_group") {
                         Ok(request) => request,
-                        Err(e) => panic!("Failed to create group data request due to: {e:?}"),
+                        Err(e) => {
+                            log!(format!(
+                                "[ERROR] Failed to create group creation request due to: {e:?}"
+                            ));
+                            return Message::GroupCreateError(GroupCreateError::RequestCreation);
+                        }
                     };
 
                     let Some(window) = window() else {
@@ -49,42 +62,48 @@ impl yew::Component for Home {
 
                     let res = match JsFuture::from(window.fetch_with_request(&request)).await {
                         Ok(res) => res,
-                        Err(e) => return Message::GroupCreateError(e),
+                        Err(e) => {
+                            log!(format!("[ERROR] Fetch failed due to: {e:?}"));
+                            return Message::GroupCreateError(GroupCreateError::Fetch);
+                        }
                     };
 
                     let Ok(resp) = res.dyn_into::<Response>() else {
-                        return Message::GroupCreateError(JsValue::from_str(
-                            "Failed to convert the response to a usable format",
-                        ));
+                        return Message::GroupCreateError(GroupCreateError::Parsing);
                     };
 
                     if resp.status() != 200 {
-                        return Message::GroupCreateError(JsValue::from_str(&format!(
-                            "Request was not succesful: {}",
-                            resp.status()
-                        )));
+                        return Message::GroupCreateError(GroupCreateError::Status(resp.status()));
                     }
 
                     let resp_text_promise = match resp.text() {
                         Ok(json) => json,
-                        Err(e) => return Message::GroupCreateError(e),
+                        Err(e) => {
+                            log!(format!("[ERROR] Failed to get reponse text due to: {e:?}"));
+                            return Message::GroupCreateError(GroupCreateError::Parsing);
+                        }
                     };
 
                     let resp_text_value = match JsFuture::from(resp_text_promise).await {
                         Ok(json) => json,
-                        Err(e) => return Message::GroupCreateError(e),
+                        Err(e) => {
+                            log!(format!(
+                                "[ERROR] Failed to convert response text to JsValue {e:?}"
+                            ));
+                            return Message::GroupCreateError(GroupCreateError::Parsing);
+                        }
                     };
 
                     let Some(resp_text) = resp_text_value.as_string() else {
-                        return Message::GroupCreateError(JsValue::from_str(
-                            "Failed to convert the received data to string",
-                        ));
+                        return Message::GroupCreateError(GroupCreateError::Parsing);
                     };
 
                     let group_id = match resp_text.parse::<u64>() {
                         Ok(v) => v,
                         Err(e) => {
-                            return Message::GroupCreateError(JsValue::from_str(&format!("{e}")))
+                            log!(format!("[ERROR] Failed to parse group id {e}"));
+
+                            return Message::GroupCreateError(GroupCreateError::Parsing);
                         }
                     };
 
@@ -95,7 +114,16 @@ impl yew::Component for Home {
                 true
             }
             Message::GroupCreated(id) => {
-                use yew_router::prelude::RouterScopeExt as _;
+                use {
+                    crate::component::{push_notification, Notification},
+                    yew_router::prelude::RouterScopeExt as _,
+                };
+
+                push_notification(Notification::info(
+                    "Group created",
+                    vec!["A new group has been created with id:", &id.to_string()],
+                    5.,
+                ));
 
                 let Some(nav) = ctx.link().navigator() else {
                     panic!("Could not get the navigator");
@@ -108,9 +136,32 @@ impl yew::Component for Home {
 
                 true
             }
-            Message::GroupCreateError(_e) => {
-                // TODO: Error path
-                todo!()
+            Message::GroupCreateError(e) => {
+                use crate::component::{push_notification, Notification};
+
+                let reason_string = match e {
+                    GroupCreateError::RequestCreation => "Failed to create request".to_string(),
+                    GroupCreateError::Fetch => "The server failed to respond".to_string(),
+                    GroupCreateError::Parsing => {
+                        "Failed to understand the server's response".to_string()
+                    }
+                    GroupCreateError::Status(code) => {
+                        format!("The server failed to handle the group creation request ({code})")
+                    }
+                };
+
+                push_notification(Notification::error(
+                    "Group creation error",
+                    vec![
+                        "An error occured while requesting a new group:",
+                        &reason_string,
+                    ],
+                    5.,
+                ));
+
+                self.group_creation_requested = false;
+
+                true
             }
         }
     }

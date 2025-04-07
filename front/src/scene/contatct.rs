@@ -19,11 +19,11 @@ impl yew::Component for Contact {
                 <table>
                     <tr>
                         <th>{
-                            "Email: "
+                            "Email:"
                         }</th>
-                        <td>{
-                            "contact@bowarc.ovh"
-                        }</td>
+                        <td>
+                            <a href="mailto:contact@bowarc.ovh">{"contact@bowarc.ovh"}</a>
+                        </td>
                     </tr>
                 </table>
                 
