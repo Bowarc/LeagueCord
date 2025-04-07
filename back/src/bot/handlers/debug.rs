@@ -47,23 +47,6 @@ impl serenity::all::EventHandler for Debug {
         };
 
         if !super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
-            if let Err(e) = message
-                .reply(
-                    ctx.http(),
-                    "You don't have the required permissions to use this module",
-                )
-                .await
-            {
-                super::log_error(
-                    ctx.http(),
-                    &data.ids,
-                    &format!(
-                        "Failed to send error reply to {} who use a debug command due to: {e}",
-                        message.author.name
-                    ),
-                )
-                .await
-            }
             return;
         }
 
@@ -95,27 +78,6 @@ impl serenity::all::EventHandler for Debug {
         };
 
         if !super::has_admin_role(ctx.http(), &ci.user, &data.ids).await {
-            if let Err(e) = ci
-                .create_response(
-                    ctx.http(),
-                    CreateInteractionResponse::Message(
-                        CreateInteractionResponseMessage::new().content(
-                            "You do not ahve the required premissions to use that command",
-                        ),
-                    ),
-                )
-                .await
-            {
-                super::log_error(
-                    ctx.clone(),
-                    &data.ids,
-                    &format!(
-                        "An occured while sending error reply to {} who used !reset: {e}",
-                        ci.user.name
-                    ),
-                )
-                .await
-            }
             return;
         }
 
