@@ -124,7 +124,7 @@ async fn create_group(ctx: &serenity::all::Context, message: &serenity::all::Mes
         return;
     };
 
-    if super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
+    if !super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
         if let Err(e) = message
             .reply(
                 ctx.http(),
@@ -184,7 +184,7 @@ async fn cleanup(ctx: &serenity::all::Context, message: &serenity::all::Message)
         return;
     };
 
-    if super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
+    if !super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
         if let Err(e) = message
             .reply(
                 ctx.http(),
@@ -307,7 +307,7 @@ async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandIntera
 
     // @everyone role doesn't have the permission to run /commands, but just in case
 
-    if super::has_admin_role(ctx.http(), &ci.user, &data.ids).await {
+    if !super::has_admin_role(ctx.http(), &ci.user, &data.ids).await {
         if let Err(e) = ci
             .create_response(
                 ctx.http(),
