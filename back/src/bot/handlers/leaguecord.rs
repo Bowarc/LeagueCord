@@ -1,29 +1,5 @@
 pub struct LeagueCord;
 
-async fn check_role_perms(
-    http: impl serenity::all::CacheHttp,
-    ids: &crate::data::IdCache,
-) -> Result<(), String> {
-    use serenity::all::Permissions;
-
-    let role = http
-        .http()
-        .get_guild_role(ids.guild, ids.guild.everyone_role())
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let expected = Permissions::empty(); //.union(Permissions::USE_APPLICATION_COMMANDS);
-
-    if role.permissions != expected {
-        return Err(format!(
-            "INVALID EVERYONE ROLE PERMISSIONS, got '{:?}' instead of {:?}",
-            role.permissions, expected
-        ));
-    }
-
-    Ok(())
-}
-
 #[serenity::async_trait]
 impl serenity::all::EventHandler for LeagueCord {
     async fn ready(
@@ -35,7 +11,6 @@ impl serenity::all::EventHandler for LeagueCord {
             crate::data::{IdCache, InviteTracker, LeagueCordData},
             std::sync::Arc,
             tokio::sync::RwLock,
-            serenity::all::CacheHttp,
         };
 
         if data_about_bot.guilds.len() != 1 {
@@ -50,8 +25,6 @@ impl serenity::all::EventHandler for LeagueCord {
             .unwrap();
 
         let id_cache = IdCache::new(ctx.clone(), guild.id).await.unwrap();
-
-        check_role_perms(ctx.http(), &id_cache).await.unwrap();
 
         let invites = InviteTracker::new(ctx.http, &id_cache).await.unwrap();
 

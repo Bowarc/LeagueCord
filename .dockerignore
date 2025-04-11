@@ -1,0 +1,17 @@
+*
+
+!./back
+!./front
+!./shared
+!./Cargo.toml
+!./Cargo.lock
+
+!./static
+
+!./scripts
+
+!./test.env
+!./.env
+
+!./Rocket.toml
+!./test.Rocket.toml

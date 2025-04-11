@@ -35,14 +35,14 @@ impl IdCache {
         )
         .await?;
 
-        let lost_role = *guild_id
-            .roles(ctx.http())
-            .await
-            .map_err(|e| e.to_string())?
-            .iter()
-            .find(|(_id, role)| role.name == "lost")
-            .ok_or(String::from("Could not find admin role"))?
-            .0;
+        let lost_role = find_or_create_role(
+            ctx.clone(),
+            guild_id,
+            "lost",
+            (0, 0, 0),
+            Permissions::empty(),
+        )
+        .await?;
 
         let community_category = find_or_create_channel(
             ctx.clone(),
@@ -91,16 +91,24 @@ impl IdCache {
                 .map_err(|e| e.to_string())?;
         }
 
+        ensure_role_permissions(
+            ctx.http(),
+            guild_id,
+            guild_id.everyone_role(),
+            Permissions::empty(), //.union(Permissions::USE_APPLICATION_COMMANDS)
+        )
+        .await?;
+
         Ok(Self {
             guild: guild_id,
-            admin_role: *guild_id
-                .roles(ctx.http())
-                .await
-                .map_err(|e| e.to_string())?
-                .iter()
-                .find(|(_id, role)| role.name == "-")
-                .ok_or(String::from("Could not find admin role"))?
-                .0,
+            admin_role: find_or_create_role(
+                ctx.clone(),
+                guild_id,
+                "-",
+                (36, 219, 144),
+                Permissions::empty().union(Permissions::ADMINISTRATOR),
+            )
+            .await?,
             lost_role,
             graveyard_category: find_or_create_channel(
                 ctx.clone(),
@@ -170,4 +178,84 @@ async fn find_or_create_channel(
     guild_channels.push(channel);
 
     Ok(c_id)
+}
+
+async fn find_or_create_role(
+    ctx: serenity::all::Context,
+    guild_id: serenity::all::GuildId,
+    name: &str,
+    color: impl Into<serenity::all::Color>,
+    permissions: serenity::all::Permissions,
+) -> Result<serenity::all::RoleId, String> {
+    use serenity::all::{CacheHttp, EditRole};
+
+    let mut roles_res = guild_id
+        .roles(ctx.http())
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let Some((id, role)) = roles_res.iter_mut().find(|(_id, role)| role.name == name) else {
+        warn!("Could not find '{name}' role, creating it . .");
+
+        match guild_id
+            .create_role(
+                ctx.http(),
+                EditRole::new()
+                    .colour(color)
+                    .name(name)
+                    .permissions(permissions),
+            )
+            .await
+        {
+            Ok(role) => return Ok(role.id),
+            Err(e) => return Err(format!("Could not create role '{name}' due to: {e}")),
+        }
+    };
+
+    let color = color.into();
+
+    if role.colour != color {
+        if let Err(e) = role.edit(ctx.http(), EditRole::new().colour(color)).await {
+            return Err(format!(
+                "Failed to edit the color of role '{name}' due to: {e}"
+            ));
+        }
+    }
+
+    ensure_role_permissions(ctx.http(), guild_id, *id, permissions).await?;
+
+    Ok(*id)
+}
+
+async fn ensure_role_permissions(
+    http: impl serenity::all::CacheHttp,
+    guild_id: serenity::all::GuildId,
+    role_id: serenity::all::RoleId,
+    expected: serenity::all::Permissions,
+) -> Result<(), String> {
+    use serenity::all::EditRole;
+
+    let mut role = http
+        .http()
+        .get_guild_role(guild_id, role_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // let expected = Permissions::empty(); //.union(Permissions::USE_APPLICATION_COMMANDS);
+
+    if role.permissions == expected {
+        return Ok(());
+    }
+
+    if let Err(e) = role
+        .edit(http.http(), EditRole::new().permissions(expected))
+        .await
+    {
+        return Err(format!(
+            "Failed to edit permissions of role '{}' due to: {e}, has {:?} instead of {:?}",
+            role.name, role.permissions, expected
+        ));
+    }
+
+    Ok(())
 }

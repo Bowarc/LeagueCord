@@ -1,3 +1,6 @@
+# Args: BOT_ENV (path to discord bot .env file)
+#       ROCKET_CFG (path to Rocket.toml file)
+
 ##########
 #  BASE  #
 ##########
@@ -13,10 +16,13 @@ RUN cargo install --git https://github.com/Bowarc/cargo-chef
 ##########
 FROM base AS planner
 
+ARG ROCKET_CFG
+
 WORKDIR /app
 
 # Move the essentials
-COPY ./Rocket.toml ./Cargo.toml ./Cargo.lock .
+COPY $ROCKET_CFG ./Rocket.toml
+COPY ./Cargo.toml ./Cargo.lock .
 COPY ./back ./back
 COPY ./front ./front
 COPY ./shared ./shared
@@ -29,18 +35,21 @@ RUN cargo chef prepare --recipe-path recipe.json
 ###########
 FROM base AS builder
 
+ARG ROCKET_CFG
+
 WORKDIR /app
 
 # Take the recipe only from tyhe planner
 COPY --from=planner /app/recipe.json recipe.json
 
 # Set up the project's build artefacts
-RUN cargo chef cook --release --recipe-path recipe.json --jobs 1
+RUN cargo chef cook --release --recipe-path recipe.json
 RUN cargo chef cook -p front --release --target=wasm32-unknown-unknown --recipe-path recipe.json
 
 # Pull the projects code
 COPY ./scripts/build_back.sh ./scripts/build_front.sh ./scripts/
-COPY ./Rocket.toml ./Cargo.toml ./Cargo.lock .
+COPY $ROCKET_CFG ./Rocket.toml
+COPY ./Cargo.toml ./Cargo.lock .
 COPY ./back ./back
 COPY ./front ./front
 COPY ./shared ./shared
@@ -54,13 +63,15 @@ RUN sh ./scripts/build_front.sh release
 ##########
 FROM ubuntu:22.04 AS runner
 
+ARG BOT_ENV
+
 WORKDIR /app
 
 # Here we take the rocket config from builder because it has been used to build the front end, to elimiate all TOCTOU / desync issues, we use the same one
 COPY --from=builder /app/target/release/leaguecord /app/Rocket.toml .
 COPY ./static ./static
 COPY --from=builder /app/target/wasm-bindgen/release/* ./static/
-COPY ./.env .
+COPY $BOT_ENV ./.env
 
 RUN mkdir ./log
 
@@ -68,3 +79,4 @@ EXPOSE 42069
 
 CMD ["./leaguecord"]
 
+      
