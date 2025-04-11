@@ -102,7 +102,9 @@ impl serenity::all::EventHandler for Debug {
             }
             "devreport" => devreport(ctx, ci).await,
 
-            _ => debug!("Unknown command from {} {}", ci.user.name, ci.data.name),
+            _ => (),
+            // Might not be a debug command ! 
+            // debug!("Unknown command from {} {}", ci.user.name, ci.data.name),
         }
     }
 }
