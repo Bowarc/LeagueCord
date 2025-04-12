@@ -1,0 +1,14 @@
+.group_not_found{
+
+  
+}
+
+.group_not_found .redirection-link{
+  border: 1px solid var(--accent-200);
+  border-radius: 2px;
+  background-color: transparent;
+  padding: 1px;
+  
+  
+}
+

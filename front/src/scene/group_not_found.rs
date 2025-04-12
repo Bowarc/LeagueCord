@@ -12,9 +12,13 @@ impl yew::Component for GroupNotFound {
     fn view(&self, _ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
         use yew::html;
 
-        html! {<>
-            <h1>{"The requested group was not found"}</h1>
-            { "TODO" }
-        </>}
+        html! {<div class="group_not_found">
+            <h3>{"The requested group no longer exists"}</h3>
+            <p>
+                { "Click " }
+                <a href="/" class="redirection-link">{ "here" }</a>
+                { " to go back to the home page" }
+            </p>
+        </div>}
     }
 }

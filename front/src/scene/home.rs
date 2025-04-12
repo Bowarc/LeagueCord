@@ -63,7 +63,7 @@ impl yew::Component for Home {
                     let res = match JsFuture::from(window.fetch_with_request(&request)).await {
                         Ok(res) => res,
                         Err(e) => {
-                            log!(format!("[ERROR] Fetch failed due to: {e:?}"));
+                            log!(format!("[ERROR] Fetch (group creation) failed due to: {e:?}"));
                             return Message::GroupCreateError(GroupCreateError::Fetch);
                         }
                     };

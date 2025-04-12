@@ -85,11 +85,14 @@ pub async fn static_css(file: &str, ip_addr: crate::data::IpStruct) -> super::re
     use rocket::http::Status;
 
     const ALLOWED_FILES: &[&str] = &[
-        "contact.css",
-        "home.css",
-        "notification.css",
-        "style.css",
         "theme.css",
+        "style.css",
+        "home.css",
+        "group.css",
+        "group_not_found.css",
+        "contact.css",
+        "about.css",
+        "notification.css",
     ];
 
     if !ALLOWED_FILES.contains(&file) {

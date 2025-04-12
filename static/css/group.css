@@ -1,0 +1,17 @@
+.group{
+  
+}
+
+.group .body{
+  text-align:left;
+  max-width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.group .discord-join-link{
+  border: 1px solid var(--accent-200);
+  border-radius: 2px;
+  background-color: transparent;
+  padding: 1px;
+}

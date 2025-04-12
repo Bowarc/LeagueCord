@@ -10,13 +10,34 @@ pub struct Props {
 pub enum DataFetchState {
     Pending,
     Received(shared::GroupData),
-    Failed(wasm_bindgen::JsValue),
+    Failed(DataFetchError),
+}
+
+pub enum DataFetchError {
+    RequestCreation,
+    Fetch,
+    Parsing,
+    Status(u16),
+}
+
+impl std::fmt::Display for DataFetchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DataFetchError::RequestCreation => write!(f, "Failed to create the request"),
+            DataFetchError::Fetch => write!(f, "The server failed to respond"),
+            DataFetchError::Parsing => write!(f, "Failed to understand the server's response"),
+            DataFetchError::Status(code) => write!(
+                f,
+                "The server failed to handle the group data fetch request ({code})"
+            ),
+        }
+    }
 }
 
 pub enum Message {
     Redraw,
     DataReceived(shared::GroupData),
-    DataFetchError(wasm_bindgen::JsValue),
+    DataFetchError(DataFetchError),
 }
 
 impl yew::Component for Group {
@@ -28,59 +49,74 @@ impl yew::Component for Group {
         use {
             gloo::console::log,
             shared::GroupData,
-            wasm_bindgen::{JsCast as _, JsValue},
+            wasm_bindgen::JsCast as _,
             wasm_bindgen_futures::JsFuture,
             web_sys::{window, Request, Response},
         };
 
         let id = ctx.props().group_id;
-        let request = match Request::new_with_str(&format!("/group_data/{id}")) {
-            Ok(request) => request,
-            Err(e) => panic!("Failed to create group data request due to: {e:?}"),
-        };
-
-        let Some(window) = window() else {
-            panic!("Failed to get the window");
-        };
 
         ctx.link().send_future(async move {
+            let request = match Request::new_with_str(&format!("/group_data/{id}")) {
+                Ok(request) => request,
+                Err(e) => {
+                    log!(format!(
+                        "[ERROR] Failed to create group data request due to: {e:?}"
+                    ));
+                    return Message::DataFetchError(DataFetchError::RequestCreation);
+                }
+            };
+
+            let Some(window) = window() else {
+                panic!("Failed to get the window");
+            };
+
             let res = match JsFuture::from(window.fetch_with_request(&request)).await {
                 Ok(res) => res,
-                Err(e) => return Message::DataFetchError(e),
+                Err(e) => {
+                    log!(format!("[ERROR] Fetch (group data) failed due to: {e:?}"));
+                    return Message::DataFetchError(DataFetchError::Fetch);
+                }
             };
 
             let Ok(resp) = res.dyn_into::<Response>() else {
-                return Message::DataFetchError(JsValue::from_str(
-                    "Failed to convert the response to a usable format",
-                ));
+                return Message::DataFetchError(DataFetchError::Parsing);
             };
 
             if resp.status() != 200 {
-                return Message::DataFetchError(JsValue::from_str(&format!(
-                    "Request was not succesful: {}",
-                    resp.status()
-                )));
+                return Message::DataFetchError(DataFetchError::Status(resp.status()));
             }
 
             let resp_text_promise = match resp.text() {
                 Ok(json) => json,
-                Err(e) => return Message::DataFetchError(e),
+                Err(e) => {
+                    log!(format!("[ERROR] failed to get response text due to: {e:?}"));
+                    return Message::DataFetchError(DataFetchError::Parsing);
+                }
             };
 
             let resp_text_value = match JsFuture::from(resp_text_promise).await {
                 Ok(json) => json,
-                Err(e) => return Message::DataFetchError(e),
+                Err(e) => {
+                    log!(format!(
+                        "[ERROR] Failed to convert response text to JsValue {e:?}"
+                    ));
+                    return Message::DataFetchError(DataFetchError::Parsing);
+                }
             };
 
             let Some(resp_text) = resp_text_value.as_string() else {
-                return Message::DataFetchError(JsValue::from_str(
-                    "Failed to convert the received data to string",
-                ));
+                return Message::DataFetchError(DataFetchError::Parsing);
             };
 
             let group_data = match serde_json::from_str::<GroupData>(&resp_text) {
                 Ok(v) => v,
-                Err(e) => return Message::DataFetchError(JsValue::from_str(&format!("{e}"))),
+                Err(e) => {
+                    log!(format!(
+                        "[ERROR] Failed to parse received group data due to: {e:?}"
+                    ));
+                    return Message::DataFetchError(DataFetchError::Parsing);
+                }
             };
 
             log!(format!("Data received: {group_data:?}"));
@@ -107,6 +143,17 @@ impl yew::Component for Group {
                 true
             }
             Message::DataFetchError(error) => {
+                use crate::component::{push_notification, Notification};
+
+                push_notification(Notification::error(
+                    "Group data fetch error",
+                    vec![
+                        &format!("An error occured while requesting data about group {}", ctx.props().group_id),
+                        &format!("{error}")
+                    ],
+                    5.,
+                ));
+
                 self.data_fetch_state = DataFetchState::Failed(error);
                 true
             }
@@ -125,9 +172,7 @@ impl yew::Component for Group {
         let body = match &self.data_fetch_state {
             DataFetchState::Pending => html! {<>{ "Fetching data . ."}</>},
             DataFetchState::Received(group_data) => {
-                html! {<>
-                    { format!("Id: {}", group_data.id()) }
-                    <br />
+                html! {<div class="body">
                     {
                         format!(
                             "Created {} ago",
@@ -143,14 +188,14 @@ impl yew::Component for Group {
                     { format!("Member count: {}", group_data.user_count()) }
                     <br />
                     { format!("Join with: ") }
-                    <a href={format!("https://discord.gg/{}", group_data.invite_code())}> {"this link"}</a>
-                </>}
+                    <a href={format!("https://discord.gg/{}", group_data.invite_code())} class="discord-join-link"> {"this link"}</a>
+                </div>}
             }
-            DataFetchState::Failed(js_value) => html! {<>{format!("Error: {js_value:?}")}</>},
+            DataFetchState::Failed(error) => html! {<>{format!("Error: {}", error.to_string())}</>},
         };
 
         html! {<>
-            <div class="about">
+            <div class="group">
                 <h1>{format!("Group {group_id}")}</h1>
                 {
                     body
