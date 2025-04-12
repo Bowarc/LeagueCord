@@ -3,7 +3,7 @@
 #[rocket::get("/group/<id>")]
 pub async fn group(
     id: crate::data::GroupId,
-    ip_addr: std::net::IpAddr,
+    ip_addr: crate::data::IpStruct,
     lc_data: &rocket::State<crate::data::LeagueCordData>,
 ) -> super::super::response::Response {
     use super::super::response::Response;
@@ -25,7 +25,7 @@ pub async fn group(
 #[rocket::get("/group_data/<id>")]
 pub async fn group_data(
     id: crate::data::GroupId,
-    ip_addr: std::net::IpAddr,
+    ip_addr: crate::data::IpStruct,
     lc_data: &rocket::State<crate::data::LeagueCordData>,
 ) -> super::super::response::Response {
     use {super::super::response::Response, rocket::http::Status};

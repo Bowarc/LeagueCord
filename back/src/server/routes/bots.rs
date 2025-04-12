@@ -7,7 +7,7 @@
 
 async fn bot_main(
     route: std::path::PathBuf,
-    ip: std::net::IpAddr,
+    ip: crate::data::IpStruct,
 ) -> crate::server::response::Response {
     use {
         crate::server::response::Response,
@@ -24,7 +24,7 @@ async fn bot_main(
 
 #[rocket::get("/.env")]
 pub async fn bot_env(
-    ip: std::net::IpAddr,
+    ip: crate::data::IpStruct,
 ) -> crate::server::response::Response {
     use std::path::PathBuf;
     bot_main(PathBuf::from("/.env"), ip).await
@@ -33,7 +33,7 @@ pub async fn bot_env(
 #[rocket::get("/admin/<p..>")]
 pub async fn bot_admin(
     p: std::path::PathBuf,
-    ip: std::net::IpAddr,
+    ip: crate::data::IpStruct,
 ) -> crate::server::response::Response {
     use std::path::PathBuf;
     bot_main(PathBuf::from("/admin").join(p), ip).await
@@ -42,7 +42,7 @@ pub async fn bot_admin(
 #[rocket::get("/wordpress/<p..>")]
 pub async fn bot_wordpress(
     p: std::path::PathBuf,
-    ip: std::net::IpAddr,
+    ip: crate::data::IpStruct,
 ) -> crate::server::response::Response {
     use std::path::PathBuf;
     bot_main(PathBuf::from("/wordpress").join(p), ip).await
@@ -51,7 +51,7 @@ pub async fn bot_wordpress(
 #[rocket::get("/wp/<p..>")]
 pub async fn bot_wp(
     p: std::path::PathBuf,
-    ip: std::net::IpAddr,
+    ip: crate::data::IpStruct,
 ) -> crate::server::response::Response {
     use std::path::PathBuf;
     bot_main(PathBuf::from("/wp").join(p), ip).await
@@ -60,7 +60,7 @@ pub async fn bot_wp(
 #[rocket::get("/wp-admin/<p..>")]
 pub async fn bot_wp_admin(
     p: std::path::PathBuf,
-    ip: std::net::IpAddr,
+    ip: crate::data::IpStruct,
 ) -> crate::server::response::Response {
     use std::path::PathBuf;
     bot_main(PathBuf::from("/wp-admin").join(p), ip).await

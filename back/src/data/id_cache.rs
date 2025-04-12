@@ -241,8 +241,6 @@ async fn ensure_role_permissions(
         .await
         .map_err(|e| e.to_string())?;
 
-    // let expected = Permissions::empty(); //.union(Permissions::USE_APPLICATION_COMMANDS);
-
     if role.permissions == expected {
         return Ok(());
     }

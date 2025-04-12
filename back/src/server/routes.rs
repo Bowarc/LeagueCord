@@ -13,12 +13,12 @@ pub use group_not_found_route::group_not_found;
 pub use group_route::{group, group_data};
 
 #[rocket::get("/404")]
-pub async fn notfound(ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn notfound(ip_addr: crate::data::IpStruct) -> super::response::Response {
     root(ip_addr).await
 }
 
 #[rocket::get("/")]
-pub async fn root(ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn root(ip_addr: crate::data::IpStruct) -> super::response::Response {
     use rocket::http::ContentType;
 
     static_file_response("index.html", ContentType::HTML, ip_addr).await
@@ -33,28 +33,28 @@ pub async fn root(ip_addr: std::net::IpAddr) -> super::response::Response {
 // }
 
 #[rocket::get("/front.js")]
-pub async fn front_js(ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn front_js(ip_addr: crate::data::IpStruct) -> super::response::Response {
     use rocket::http::ContentType;
 
     static_file_response("/front.js", ContentType::JavaScript, ip_addr).await
 }
 
 #[rocket::get("/front_bg.wasm")]
-pub async fn front_bg_wasm(ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn front_bg_wasm(ip_addr: crate::data::IpStruct) -> super::response::Response {
     use rocket::http::ContentType;
 
     static_file_response("/front_bg.wasm", ContentType::WASM, ip_addr).await
 }
 
 #[rocket::get("/index.html")]
-pub async fn index_html(ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn index_html(ip_addr: crate::data::IpStruct) -> super::response::Response {
     use rocket::http::ContentType;
 
     static_file_response("/index.html", ContentType::HTML, ip_addr).await
 }
 
 #[rocket::get("/favicon.ico")]
-pub async fn favicon_ico(ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn favicon_ico(ip_addr: crate::data::IpStruct) -> super::response::Response {
     use rocket::http::ContentType;
 
     static_file_response("favicon.ico", ContentType::Icon, ip_addr).await
@@ -63,7 +63,7 @@ pub async fn favicon_ico(ip_addr: std::net::IpAddr) -> super::response::Response
 // The goal of this method, is to not use FileServer (because i wanna make sure of what file i serve)
 // but i can't do #[rocket::get("/<file>")] as i want to use the get root path for the download api
 #[rocket::get("/resources/<file>")]
-pub async fn static_resource(file: &str, ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn static_resource(file: &str, ip_addr: crate::data::IpStruct) -> super::response::Response {
     use super::response::Response;
     use rocket::http::Status;
 
@@ -80,7 +80,7 @@ pub async fn static_resource(file: &str, ip_addr: std::net::IpAddr) -> super::re
 }
 
 #[rocket::get("/css/<file>")]
-pub async fn static_css(file: &str, ip_addr: std::net::IpAddr) -> super::response::Response {
+pub async fn static_css(file: &str, ip_addr: crate::data::IpStruct) -> super::response::Response {
     use crate::server::response::Response;
     use rocket::http::Status;
 
@@ -102,7 +102,7 @@ pub async fn static_css(file: &str, ip_addr: std::net::IpAddr) -> super::respons
 pub async fn serve_static(
     path: &str,
     file: &str,
-    ip_addr: std::net::IpAddr,
+    ip_addr: crate::data::IpStruct,
 ) -> super::response::Response {
     use rocket::http::ContentType;
 
@@ -124,21 +124,19 @@ pub async fn serve_static(
             ContentType::Any
         });
 
-    info!("Serving {path}/{file} w/ type: {content_type:?}");
-
     static_file_response(&format!("{path}/{file}"), content_type, ip_addr).await
 }
 
 async fn static_file_response(
     path: &str,
     content_type: rocket::http::ContentType,
-    ip_addr: std::net::IpAddr,
+    ip_addr: crate::data::IpStruct,
 ) -> super::response::Response {
     use crate::server::response::Response;
     use rocket::http::Status;
     use tokio::io::AsyncReadExt as _;
 
-    async fn read_static(path: &str, ip_addr: std::net::IpAddr) -> Option<Vec<u8>> {
+    async fn read_static(path: &str, ip_addr: crate::data::IpStruct) -> Option<Vec<u8>> {
         let mut buffer = Vec::new();
 
         let size = rocket::tokio::fs::File::open(format!("./static/{path}"))

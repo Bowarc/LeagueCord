@@ -168,8 +168,6 @@ impl yew::Component for Home {
 
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
         use yew::html;
-        // let nav_opt = ctx.link().navigator().unwrap();
-        // log!(navigator.is_some());
 
         let create_group = ctx.link().callback(|_| Message::CreateGroup);
 

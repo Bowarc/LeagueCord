@@ -15,7 +15,16 @@ impl yew::Component for About {
         html! {<>
             <div class="about">
                 <h1>{"About"}</h1>
-                <p> { "TODO" }</p>
+                // <p>{ "TODO" }</p>
+                <p>{ "Temporary voice group system for players." }</p>
+                <h3>{ "Current state: " }</h3>
+                <p>{ "Most of the basic logic is done, interface is still lacking" }</p>
+                <p>
+                    { "If you have any specfic feature idea, please file an issue " }
+                    <a href="https://github.com/bowarc/leaguecord/issues">{ "here" }</a>
+                    { "." }
+                </p>
+                <p>{ "For security issues, please contact me through my email in the Contact tab." }</p>
             </div>
         </>}
     }

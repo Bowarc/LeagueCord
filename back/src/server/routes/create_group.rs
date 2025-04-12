@@ -2,7 +2,7 @@
 pub async fn create_group(
     lc_data: &rocket::State<crate::data::LeagueCordData>,
     http: &rocket::State<std::sync::Arc<serenity::all::Http>>,
-    ip_addr: std::net::IpAddr,
+    ip_addr: crate::data::IpStruct,
     spam_tracker: &rocket::State<crate::data::GroupCreationSpamTracker>,
 ) -> super::super::response::Response {
     use {

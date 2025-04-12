@@ -19,6 +19,7 @@ serenity = "0.12.4"
 rocket = { version = "0.5.1", features = [
   "json",
 ] } # I use the json feature to create a group object to send to front end
+rocket-client-addr = { git = "https://github.com/bowarc/rocket-client-addr"}
 thiserror = "2.0.11"
 dotenv = "0.15.0"
 tokio-util = { version = "0.7.13", default-features = false, features = [
