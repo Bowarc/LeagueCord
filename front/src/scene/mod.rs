@@ -3,12 +3,14 @@ mod contatct;
 mod group;
 mod group_not_found;
 mod home;
+mod not_found;
 
 pub use about::About;
 pub use contatct::Contact;
 pub use group::Group;
 pub use group_not_found::GroupNotFound;
 pub use home::Home;
+pub use not_found::NotFound;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Scene {
@@ -17,6 +19,7 @@ pub enum Scene {
     Contact,
     Group { group_id: u64 },
     GroupNotFound,
+    NotFound, // 404
 }
 
 impl Scene {
@@ -34,8 +37,12 @@ impl Scene {
             Scene::GroupNotFound => html! {<>
                 <GroupNotFound />
             </>},
-            Scene::About => html! {<><About /></>},
+            Scene::About => {
+                let scene_switch = ctx.link().callback(crate::app::Message::SwitchScene);
+                html! {<><About {scene_switch} /></>}
+            }
             Scene::Contact => html! {<><Contact /></>},
+            Scene::NotFound => html! {<><NotFound /></>},
         }
     }
 }
@@ -48,6 +55,7 @@ impl std::fmt::Display for Scene {
             Scene::GroupNotFound { .. } => write!(f, "Group not found"),
             Scene::About => write!(f, "About"),
             Scene::Contact => write!(f, "Contact"),
+            Scene::NotFound => write!(f, "Not found"), // Should never be accessible by a nav button
         }
     }
 }

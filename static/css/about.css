@@ -4,5 +4,16 @@
 }
 
 .about a{
+  cursor: pointer;
   margin-left: 0%
 }
+
+/* .about button{ */
+  /* cursor: pointer; */
+  /* margin: 0px; */
+  /* color: var(--accent-200); */
+  /* border: 1px solid var(--accent-200); */
+  /* border-radius: 2px; */
+  /* background-color: transparent; */
+  /* padding: 1px; */
+/* } */

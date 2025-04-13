@@ -63,7 +63,9 @@ impl yew::Component for Home {
                     let res = match JsFuture::from(window.fetch_with_request(&request)).await {
                         Ok(res) => res,
                         Err(e) => {
-                            log!(format!("[ERROR] Fetch (group creation) failed due to: {e:?}"));
+                            log!(format!(
+                                "[ERROR] Fetch (group creation) failed due to: {e:?}"
+                            ));
                             return Message::GroupCreateError(GroupCreateError::Fetch);
                         }
                     };
@@ -171,27 +173,55 @@ impl yew::Component for Home {
 
         let create_group = ctx.link().callback(|_| Message::CreateGroup);
 
-        html! {<>
-            <div class="home">
-                <p class="home_main_title">{
-                    "LeagueCord, a voice chat for league of legends"
-                }</p>
+        html! {<div class="home">
+             <h1 class="home_main_title">{
+                 "LeagueCord, a voice chat for league of legends"
+             }</h1>
 
-                <section class="home_section">
-                    <h2 class="home_section_title">{
-                        "Welcome"
-                    }</h2>
-                    <p class="home_section_text">{
-                        if !self.group_creation_requested{
-                            html!{<button onclick={create_group}>{"Create a group"}</button>}
-                        }else{
-                            let texts = vec!["Loading", "Loading . ", "Loading . .", "Loading . . ."];
-                            let delay_ms = 333;
-                            html!{<crate::component::ChangingText {texts} {delay_ms} />}
-                        }
-                    }</p>
-                </section>
-            </div>
-        </>}
+             // <section class="home_section">
+             //     <p class="home_section_title">{
+             //         "Leaguecord is a group system for League of Legends"
+             //     }</p>
+             //     <p class="home_section_text">{
+             //         if !self.group_creation_requested{
+             //             html!{<button onclick={create_group}>{"Create a group"}</button>}
+             //         }else{
+             //             let texts = vec!["Loading", "Loading . ", "Loading . .", "Loading . . ."];
+             //             let delay_ms = 333;
+             //             html!{<crate::component::ChangingText {texts} {delay_ms} />}
+             //         }
+             //     }</p>
+             // </section>
+
+             <section class="home_section">
+                 <h2 class="home_section_title">{
+                     "How to use"
+                 }</h2>
+
+                 <p class="home_section_text">{
+                     if !self.group_creation_requested{
+                         html!{<>
+                             <p>
+                                 { "Start by " }
+                                 <button onclick={create_group}>{"creating a group"}</button>
+                                 { "." }
+                             </p>
+                             <p>{ "This will create a temporary group in the Leaguecord Discord server." }</p>
+                             <p>
+                                 { "Invite your teammates using the link containing the group id, should be something like " }
+                                 <code>{"https://leaguecord.com/group/123456789"}</code>
+                            </p>
+                            <p>{ "After your game is done, simply leave the server and your group will be cleaned up" }</p>
+                         </>}
+                     }else{
+                         let texts = vec!["Loading", "Loading . ", "Loading . .", "Loading . . ."];
+                         let delay_ms = 333;
+                         html!{
+                             <crate::component::ChangingText {texts} {delay_ms} />
+                         }
+                     }
+                 }</p>
+             </section>
+        </div>}
     }
 }

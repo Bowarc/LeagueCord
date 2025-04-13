@@ -13,5 +13,5 @@ both options are cumbersome, let's make an alternative !
 
 ## Goal
 
-TODO: end goal ?
+Make it so Riot Games opens LeagueVoice to matchmade teams
 

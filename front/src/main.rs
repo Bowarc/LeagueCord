@@ -27,43 +27,36 @@ fn Router() -> yew::Html {
 
     html! {
         <BrowserRouter>
-            <Switch<Route> render={
-                |route: Route|
-                match route {
+            <Switch<Route> render={ |route: Route| {
+                let (scenes, default_scene_index) = match route {
                     Route::Home => {
-                        let scenes = vec![
+                        (vec![
                             Scene::Home,
                             Scene::About,
                             Scene::Contact
-                        ];
-                        let default_scene_index = 0;
-
-                        html! { <app::App {scenes} {default_scene_index} /> }
+                        ],0)
                     }
                     Route::Group { id: group_id } => {
-                        let scenes = vec![
+                        (vec![
                             Scene::Home,
                             Scene::Group{ group_id },
                             Scene::About,
                             Scene::Contact
-                        ];
-                        let default_scene_index = 1;
-                        html! { <app::App {scenes} {default_scene_index} /> }
+                        ],1)
                     }
                     Route::GroupNotFound => {
-                        let scenes = vec![
-                            Scene::Home,
+                        (vec![
                             Scene::GroupNotFound,
-                            Scene::About,
-                            Scene::Contact
-                        ];
-                        let default_scene_index = 1;
-                        html! { <app::App {scenes} {default_scene_index} /> }
+                        ],0)
                     }
-
-                    Route::NotFound => html! { <h1>{ "404" }</h1> },
-                }
-            } />
+                    Route::NotFound => {
+                        (vec![
+                            Scene::NotFound
+                        ],0)
+                    },
+                };
+                html! { <app::App {scenes} {default_scene_index} /> }
+            }} />
         </BrowserRouter>
     }
 }
