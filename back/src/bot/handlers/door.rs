@@ -182,7 +182,8 @@ impl serenity::all::EventHandler for Door {
         user: serenity::all::User,
         _member_data_if_available: Option<serenity::all::Member>,
     ) {
-        use crate::data::LeagueCordData;
+        use {crate::data::LeagueCordData, serenity::all::CacheHttp as _};
+
         // Get a read ref of the data
         let ctx_data_storage = ctx.data.clone();
         let ctx_data_storage_read = ctx_data_storage.read().await;
@@ -197,26 +198,30 @@ impl serenity::all::EventHandler for Door {
         // lock invites
         let mut invites = data.invites.write().await;
 
-        if let Some(group) = groups.iter_mut().find(|g| g.users.contains(&user.id)) {
-            group.users.retain(|id| id != &user.id);
+        let Some(group_index) = groups.iter_mut().position(|g| g.users.contains(&user.id)) else {
+            return;
+        };
+        let Some(group) = groups.get_mut(group_index) else {
+            super::log_error(
+                ctx.http(),
+                &data.ids,
+                &format!("Failed to get group with index: {group_index}"),
+            )
+            .await;
+            return;
+        };
+
+        group.users.retain(|id| id != &user.id);
+
+        if !group.users.is_empty() {
+            return;
         }
 
-        let mut i = 0;
+        group.cleanup_for_deletion(ctx, &data.ids).await;
 
-        loop {
-            let Some(group) = groups.get(i) else {
-                break;
-            };
+        debug!("Removing empty group: {}", group.invite_code);
 
-            if group.users.is_empty() {
-                group.cleanup_for_deletion(ctx.clone(), &data.ids).await;
-                debug!("Removing empty group: {}", group.invite_code);
-                invites.rm(&group.invite_code);
-                groups.remove(i);
-                continue;
-            }
-
-            i += 1
-        }
+        invites.rm(&group.invite_code);
+        groups.remove(group_index);
     }
 }
