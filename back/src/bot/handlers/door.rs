@@ -1,9 +1,66 @@
+use crate::data::LeagueCordData;
+
 pub struct Door;
 
 #[serenity::async_trait]
 impl serenity::all::EventHandler for Door {
+    async fn ready(
+        &self,
+        ctx: serenity::all::Context,
+        data_about_bot: serenity::model::prelude::Ready,
+    ) {
+        use serenity::all::{CacheHttp as _, CreateCommand, CreateCommandOption};
+
+        let guild = ctx
+            .http
+            .get_guild(data_about_bot.guilds.first().unwrap().id)
+            .await
+            .unwrap();
+
+        guild
+            .create_command(
+                ctx.http(),
+                CreateCommand::new("join_group")
+                    .add_option(CreateCommandOption::new(
+                        serenity::all::CommandOptionType::String,
+                        "id",
+                        "Manually join a group if the door failed to detect it.",
+                    ))
+                    .description(
+                        "Command to list different infos about the current activity of the bot",
+                    ),
+            )
+            .await
+            .unwrap();
+    }
+
     async fn message(&self, ctx: serenity::all::Context, message: serenity::all::Message) {
-        super::module_command(&ctx, "Door", message).await;
+        use serenity::all::CacheHttp as _;
+
+        super::module_command(&ctx, "Door", message.clone()).await;
+
+        let ctx_data_storage = ctx.data.clone();
+        let ctx_data_storage_read = ctx_data_storage.read().await;
+        let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
+            error!("Could not get tracked invites from data");
+            return;
+        };
+
+        if message.channel_id != data.ids.lost_channel {
+            return;
+        }
+
+        if message.author.bot {
+            return;
+        }
+
+        if super::has_admin_role(ctx.http(), &message.author, &data.ids).await {
+            return;
+        }
+
+        if let Err(e) = message.delete(ctx.http()).await {
+            error!("Failed to delete a message in lost users channel due to: {e}");
+        }
     }
 
     async fn guild_member_addition(
@@ -90,86 +147,77 @@ impl serenity::all::EventHandler for Door {
 
         // Only one invite changed
         let invite = used_invites.first().unwrap();
+        {
+            let mut groups = data.groups.write().await;
 
-        let mut groups = data.groups.write().await;
-
-        // Find the group associated to that invite, else kick em
-        let Some(group) = groups
-            .iter_mut()
-            .find(|group| group.invite_code == invite.code)
-        else {
-            warn!(
-                "User {} tried to join with an invite that did not correspond to any group.",
-                new_member.user.name
-            );
-
-            if let Err(e) = data
-                .ids
-                .bot_log_channel
-                .send_message(
+            // Find the group associated to that invite, else kick em
+            let Some(group) = groups
+                .iter_mut()
+                .find(|group| group.invite_code == invite.code)
+            else {
+                super::log_error(
                     ctx.http(),
-                    CreateMessage::new().content(format!(
-                        "User {} tried to join with an invite that did not correspond to any group.",
-                        new_member.user.name
-                    )),
+                    &data.ids,
+                    &format!(
+                "User {} tried to join with an invite that did not correspond to any group.",
+                new_member.user.name,
+            ),
                 )
-                .await
-            {
-                error!("Failed to send error message to log channel due to: {e}")
-            }
+                .await;
 
-            if let Err(e) = new_member
-                .kick_with_reason(ctx.http(), "Not appart of a valid group")
-                .await
-            {
+                if let Err(e) = new_member
+                    .kick_with_reason(ctx.http(), "Not appart of a valid group")
+                    .await
+                {
+                    super::log_error(
+                        ctx.clone(),
+                        &data.ids,
+                        &format!(
+                            "Failed to kick new member '{}'({}) due to: {e}",
+                            new_member.display_name(),
+                            new_member.user.id
+                        ),
+                    )
+                    .await
+                };
+
+                return;
+            };
+
+            if let Err(e) = new_member.add_role(ctx.http(), group.role).await {
                 super::log_error(
                     ctx.clone(),
                     &data.ids,
                     &format!(
-                        "Failed to kick new member '{}'({}) due to: {e}",
+                        "Failed to set group role for new member: '{}'({}) due to: {e}",
                         new_member.display_name(),
                         new_member.user.id
                     ),
                 )
                 .await
-            };
+            }
+            group.users.push(new_member.user.id);
 
-            return;
-        };
+            debug!(
+                "Successfully moved new member ({}) to group: {}",
+                new_member.user.id, group.invite_code
+            );
 
-        if let Err(e) = new_member.add_role(ctx.http(), group.role).await {
-            super::log_error(
-                ctx.clone(),
-                &data.ids,
-                &format!(
-                    "Failed to set group role for new member: '{}'({}) due to: {e}",
-                    new_member.display_name(),
-                    new_member.user.id
-                ),
-            )
-            .await
-        }
-        group.users.push(new_member.user.id);
+            let group_text_channel_id = group.text_channel;
+            let http = ctx.http();
 
-        debug!(
-            "Successfully moved new member ({}) to group: {}",
-            new_member.user.id, group.invite_code
-        );
-
-        let group_text_channel_id = group.text_channel;
-        let http = ctx.http();
-
-        if let Err(e) = group_text_channel_id
-            .send_message(
-                http,
-                CreateMessage::new().content(format!(
-                    "New player joined: {}\nMake sure to use `!help` if you have any question",
-                    new_member.mention()
-                )),
-            )
-            .await
-        {
-            error!("Failed to send welcome message due to: {e}");
+            if let Err(e) = group_text_channel_id
+                .send_message(
+                    http,
+                    CreateMessage::new().content(format!(
+                        "New player joined: {}\nMake sure to use `!help` if you have any question",
+                        new_member.mention()
+                    )),
+                )
+                .await
+            {
+                error!("Failed to send welcome message due to: {e}");
+            }
         }
 
         saved_invites_lock.set(invite.code.clone(), invite.uses);
@@ -223,5 +271,201 @@ impl serenity::all::EventHandler for Door {
 
         invites.rm(&group.invite_code);
         groups.remove(group_index);
+    }
+
+    async fn interaction_create(
+        &self,
+        ctx: serenity::all::Context,
+        interaction: serenity::all::Interaction,
+    ) {
+        use {
+            crate::data::LeagueCordData,
+            serenity::all::{
+                CacheHttp, CreateInteractionResponse, CreateInteractionResponseMessage,
+                CreateMessage, Interaction, Mentionable as _, ResolvedValue,
+            },
+        };
+
+        let Interaction::Command(ci) = interaction else {
+            return;
+        };
+
+        let ctx_data_storage = ctx.data.clone();
+        let ctx_data_storage_read = ctx_data_storage.read().await;
+        let Some(data) = ctx_data_storage_read.get::<LeagueCordData>() else {
+            error!("Could not get tracked invites from data");
+            return;
+        };
+
+        if ci.data.name.as_str() != "join_group" {
+            return;
+        }
+
+        if ci.channel_id != data.ids.lost_channel {
+            if let Err(e) = ci
+                .create_response(
+                    ctx.http,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new()
+                            .content("You cannot use that command in this channel")
+                            .ephemeral(true),
+                    ),
+                )
+                .await
+            {
+                error!("{e}");
+            }
+            return;
+        }
+
+        let Some(member) = ci.member.clone() else {
+            super::log_error(
+                ctx.http(),
+                &data.ids,
+                "Could not get the user of a /join_group command",
+            )
+            .await;
+
+            if let Err(e) = ci
+                .create_response(
+                    ctx.http,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new()
+                            .content("An internal error occured")
+                            .ephemeral(true),
+                    ),
+                )
+                .await
+            {
+                error!("{e}");
+            }
+
+            return;
+        };
+
+        // // Is user even lost ?
+        // // He should be since he is in the lost channel and this channel is only seen by pple
+        // // having the 'lost' role
+        // if member
+        //     .user
+        //     .has_role(ctx.http(), data.ids.guild, data.ids.lost_role)
+        //     .await
+        //     .ok()
+        //     != Some(true)
+        // {
+        //     if let Err(e) = ci
+        //         .create_response(
+        //             ctx.http,
+        //             CreateInteractionResponse::Message(
+        //                 CreateInteractionResponseMessage::new()
+        //                     .content("You do not have the lost role, what are you doing.")
+        //                     .ephemeral(true),
+        //             ),
+        //         )
+        //         .await
+        //     {
+        //         error!("{e}");
+        //     }
+        //     return;
+        // }
+
+        let Some(ResolvedValue::String(id)) = ci
+            .data
+            .options()
+            .iter()
+            .find(|o| o.name == "id")
+            .map(|o| o.value.clone())
+        else {
+            if let Err(e) = ci
+                .create_response(
+                    ctx.http,
+                    CreateInteractionResponse::Message(
+                        CreateInteractionResponseMessage::new()
+                            .content("You need to specify a group id to join.\nPlease refer to the lost-users message")
+                            .ephemeral(true),
+                    ),
+                )
+                .await
+            {
+                error!("{e}");
+            }
+            return;
+        };
+
+        if let Err(e) = member.remove_role(ctx.http(), data.ids.lost_role).await {
+            super::log_error(ctx.http(), &data.ids, &format!("Failed to remove lost role from someone that used the /join_group command due to: {e}")).await
+
+            // Don't return, not a big deal
+        };
+
+        {
+            let mut groups = data.groups.write().await;
+
+            let Some(group) = groups.iter_mut().find(|group| group.invite_code == id) else {
+                super::log_error(
+                    ctx.http(),
+                    &data.ids,
+                    &format!(
+                "User {} tried to join with an invite that did not correspond to any group.",
+                member.user.name,
+            ),
+                )
+                .await;
+
+                if let Err(e) = ci
+                    .create_response(
+                        ctx.http,
+                        CreateInteractionResponse::Message(
+                            CreateInteractionResponseMessage::new()
+                                .content(
+                                    "Invalid group id.\nPlease refer to the lost-users message",
+                                )
+                                .ephemeral(true),
+                        ),
+                    )
+                    .await
+                {
+                    error!("{e}");
+                }
+
+                return;
+            };
+
+            if let Err(e) = member.add_role(ctx.http(), group.role).await {
+                super::log_error(
+                    ctx.clone(),
+                    &data.ids,
+                    &format!(
+                        "Failed to set group role for new member: '{}'({}) due to: {e}",
+                        member.display_name(),
+                        member.user.id
+                    ),
+                )
+                .await
+            }
+
+            group.users.push(member.user.id);
+
+            debug!(
+                "Successfully moved new member ({}) to group: {}",
+                member.user.id, group.invite_code
+            );
+
+            let group_text_channel_id = group.text_channel;
+            let http = ctx.http();
+
+            if let Err(e) = group_text_channel_id
+                .send_message(
+                    http,
+                    CreateMessage::new().content(format!(
+                        "New player joined: {}\nMake sure to use `!help` if you have any question",
+                        member.mention()
+                    )),
+                )
+                .await
+            {
+                error!("Failed to send welcome message due to: {e}");
+            }
+        }
     }
 }

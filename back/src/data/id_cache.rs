@@ -3,6 +3,7 @@ pub struct IdCache {
     pub guild: serenity::all::GuildId,
     pub admin_role: serenity::all::RoleId,
     pub lost_role: serenity::all::RoleId,
+    pub lost_channel: serenity::all::ChannelId,
     pub graveyard_category: serenity::all::ChannelId,
     pub bot_log_channel: serenity::all::ChannelId,
     pub bot_command_channel: serenity::all::ChannelId,
@@ -40,7 +41,7 @@ impl IdCache {
             guild_id,
             "lost",
             (0, 0, 0),
-            Permissions::empty(),
+            Permissions::empty().union(Permissions::USE_APPLICATION_COMMANDS),
         )
         .await?;
 
@@ -58,7 +59,10 @@ impl IdCache {
             .create_permission(
                 ctx.http(),
                 PermissionOverwrite {
-                    allow: Permissions::READ_MESSAGE_HISTORY | Permissions::VIEW_CHANNEL,
+                    allow: Permissions::READ_MESSAGE_HISTORY
+                        | Permissions::VIEW_CHANNEL
+                        | Permissions::SEND_MESSAGES
+                        | Permissions::USE_APPLICATION_COMMANDS,
                     deny: Permissions::all(),
                     kind: PermissionOverwriteType::Role(lost_role),
                 },
@@ -85,7 +89,7 @@ impl IdCache {
             lost_channel
                 .send_message(
                     ctx.http(),
-                    CreateMessage::new().add_embed(CreateEmbed::new().field("", "Hi,\n\nLooks like our system could not find what group you tried to join.\n\nPlease try leaving the server and joining again using the same link.\n\nI'm working on a fix.", false).color((36, 219, 144))),
+                    CreateMessage::new().add_embed(CreateEmbed::new().field("", "Hi,\n\nLooks like our system could not find what group you tried to join.\n\nPlease try using the `/join_group` command to manually join your group.\nIt should be used with **only the id part of the discord link**, so\n`https://discord.gg/abcdef` -> `/join_group abcdef`.\n\n(Short explanation is that Discord doesn't allow devs to see what link members used to join. So I have to cook up a system based on server's invites use count, but it's not always reliable sooo yea.)\n\n I'm working on a fix.", false).color((36, 219, 144))),
                 )
                 .await
                 .map_err(|e| e.to_string())?;
@@ -110,6 +114,7 @@ impl IdCache {
             )
             .await?,
             lost_role,
+            lost_channel,
             graveyard_category: find_or_create_channel(
                 ctx.clone(),
                 guild_id,
@@ -189,12 +194,12 @@ async fn find_or_create_role(
 ) -> Result<serenity::all::RoleId, String> {
     use serenity::all::{CacheHttp, EditRole};
 
-    let mut roles_res = guild_id
+    let mut roles = guild_id
         .roles(ctx.http())
         .await
         .map_err(|e| e.to_string())?;
 
-    let Some((id, role)) = roles_res.iter_mut().find(|(_id, role)| role.name == name) else {
+    let Some((id, role)) = roles.iter_mut().find(|(_id, role)| role.name == name) else {
         warn!("Could not find '{name}' role, creating it . .");
 
         match guild_id

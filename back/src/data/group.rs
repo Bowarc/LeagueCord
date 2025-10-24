@@ -105,7 +105,6 @@ impl Group {
         ) {
             (Ok(text), Ok(voice)) => (text, voice),
             (Ok(c), Err(e)) | (Err(e), Ok(c)) => {
-
                 let _ignored = c.delete(http).await;
                 return Err(e.to_string());
             }
@@ -134,8 +133,9 @@ impl Group {
                         .color((36, 219, 144))
                         .title("Group infos")
                         .description(format!(
-                            "- Id: {group_id}\n- Role: {}\n- Join link: <https://leaguecord.com/group/{group_id}>\n- Created <t:{}:R>",
+                            "- Id: {group_id}\n- Role: {}\n- Discord link: <https://discord.gg/{}>\n- Group link: <https://leaguecord.com/group/{group_id}>\n- Created <t:{}:R>",
                             role.mention(),
+                            invite.code,
                             SystemTime::now()
                                 .duration_since(UNIX_EPOCH)
                                 .unwrap_or_default()

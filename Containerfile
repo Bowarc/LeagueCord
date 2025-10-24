@@ -7,7 +7,7 @@
 FROM rust:1.85 AS base
 
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install --locked wasm-bindgen-cli
+RUN cargo install -f wasm-bindgen-cli --version 0.2.100
 # RUN cargo install sccache 
 RUN cargo install --git https://github.com/Bowarc/cargo-chef
 

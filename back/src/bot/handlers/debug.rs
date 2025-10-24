@@ -7,7 +7,7 @@ impl serenity::all::EventHandler for Debug {
         ctx: serenity::all::Context,
         data_about_bot: serenity::model::prelude::Ready,
     ) {
-        use serenity::all::{CacheHttp as _, CreateCommand};
+        use serenity::all::{CacheHttp as _, CreateCommand, Permissions};
 
         let guild = ctx
             .http
@@ -18,7 +18,10 @@ impl serenity::all::EventHandler for Debug {
         guild
             .create_command(
                 ctx.http(),
-                CreateCommand::new("status").description("Check if the bot is awake"),
+                CreateCommand::new("status")
+                    .description("Check if the bot is awake")
+                    // This is just so the normal user don't see the command, the actual permission is checked at the exectution of this command
+                    .default_member_permissions(Permissions::ADMINISTRATOR),
             )
             .await
             .unwrap();
@@ -26,9 +29,12 @@ impl serenity::all::EventHandler for Debug {
         guild
             .create_command(
                 ctx.http(),
-                CreateCommand::new("devreport").description(
-                    "Command to list different infos about the current activity of the bot",
-                ),
+                CreateCommand::new("devreport")
+                    .description(
+                        "Command to list different infos about the current activity of the bot",
+                    )
+                    // This is just so the normal user don't see the command, the actual permission is checked at the exectution of this command
+                    .default_member_permissions(Permissions::ADMINISTRATOR),
             )
             .await
             .unwrap();
@@ -103,7 +109,7 @@ impl serenity::all::EventHandler for Debug {
             "devreport" => devreport(ctx, ci).await,
 
             _ => (),
-            // Might not be a debug command ! 
+            // Might not be a debug command !
             // debug!("Unknown command from {} {}", ci.user.name, ci.data.name),
         }
     }
@@ -275,10 +281,7 @@ async fn devreport(ctx: serenity::all::Context, ci: serenity::all::CommandIntera
     use {
         crate::data::LeagueCordData,
         // futures::StreamExt as _,
-        serenity::all::{
-            CreateEmbed, CreateInteractionResponse,
-            CreateInteractionResponseMessage,
-        },
+        serenity::all::{CreateEmbed, CreateInteractionResponse, CreateInteractionResponseMessage},
     };
 
     let ctx_data_storage = ctx.data.clone();
